@@ -9,33 +9,34 @@ import Type
 import Exception
 
 primitives :: [(String, [LieVal] -> ThrowsException LieVal)]
-primitives = [("id", unaryOp (\x -> return x)),
-              ("+", foldV  lieAdd),
-              ("-", foldV' lieSub (LieInt 0)),
-              ("*", foldV  lieMul),
-              ("/", foldV' lieRealDiv (LieInt 1)),
-              ("=", binaryOp  lieEq),
-              ("!=", binaryOp lieNeq),
-              ("<", binaryOp lieLt),
-              (">", binaryOp lieGt),
-              ("<=", binaryOp lieLeq),
-              (">=", binaryOp lieGeq),
-              ("and", binaryOp lieAnd),
-              ("or", binaryOp lieOr),
-              ("xor", binaryOp lieXor),
-              ("all", foldV lieAnd),
-              ("any", foldV lieOr),
-              ("div", foldV lieDiv),
-              ("mod", foldV lieMod),
-              ("im", unaryOp lieIm),
-              ("re", unaryOp lieRe),
-              ("conj", lieConj),
-              ("int?", unaryOp intp),
-              ("str?", unaryOp strp),
-              ("real?", unaryOp realp),
-              ("complex?", unaryOp complexp),
-              ("atom?", unaryOp atomp),
-              ("vec?", unaryOp vecp)]
+primitives = [("id",        unaryOp (\x -> return x)),
+              ("+",         foldV  lieAdd),
+              ("-",         foldV' lieSub (LieInt 0)),
+              ("*",         foldV  lieMul),
+              ("/",         foldV' lieRealDiv (LieInt 1)),
+              ("=",         binaryOp lieEq),
+              ("!=",        binaryOp lieNeq),
+              ("<",         binaryOp lieLt),
+              (">",         binaryOp lieGt),
+              ("<=",        binaryOp lieLeq),
+              (">=",        binaryOp lieGeq),
+              ("and",       binaryOp lieAnd),
+              ("or",        binaryOp lieOr),
+              ("xor",       binaryOp lieXor),
+              ("all",       foldV lieAnd),
+              ("any",       foldV lieOr),
+              ("not",       unaryOp lieNot),
+              ("div",       foldV lieDiv),
+              ("mod",       foldV lieMod),
+              ("im",        unaryOp lieIm),
+              ("re",        unaryOp lieRe),
+              ("conj",      lieConj),
+              ("int?",      unaryOp intp),
+              ("str?",      unaryOp strp),
+              ("real?",     unaryOp realp),
+              ("complex?",  unaryOp complexp),
+              ("atom?",     unaryOp atomp),
+              ("vec?",      unaryOp vecp)]
 
 apply :: String -> [LieVal] -> ThrowsException LieVal
 apply fn argv = maybe (throwError $ NotFunctionException "Unrecognized primitive function" fn)
@@ -176,19 +177,23 @@ lieXor :: LieVal -> LieVal -> ThrowsException LieVal
 lieXor (LieBool i) (LieBool j) = return $ LieBool $ (i || j) && not (i && j)
 lieXor a b = throwError $ BadArgumentException "xor" "boolean, boolean" [a, b]
 
+lieNot :: LieVal -> ThrowsException LieVal
+lieNot (LieBool True)  = return (LieBool False)
+lieNot (LieBool False) = return (LieBool True)
+lieNot badarg = throwError $ BadArgumentException "not" "boolean" [badarg]
+
 atomp, intp, realp, complexp, strp, boolp, vecp :: LieVal -> ThrowsException LieVal
-atomp (LieAtom _)   = return (LieBool True)
-atomp _             = return (LieBool False)
-intp (LieInt _)     = return (LieBool True)
-intp _              = return (LieBool False)
-realp (LieReal _)   = return (LieBool True)
-realp _             = return (LieBool False)
-complexp (LieComplex _) 
-                    = return (LieBool True)
-complexp _          = return (LieBool False)
-strp (LieStr _)     = return (LieBool True)
-strp _              = return (LieBool False)
-boolp (LieBool _)   = return (LieBool True)
-boolp _             = return (LieBool False)
-vecp (LieVec _)     = return (LieBool True)
-vecp _              = return (LieBool False)
+atomp (LieAtom _)       = return (LieBool True)
+atomp _                 = return (LieBool False)
+intp (LieInt _)         = return (LieBool True)
+intp _                  = return (LieBool False)
+realp (LieReal _)       = return (LieBool True)
+realp _                 = return (LieBool False)
+complexp (LieComplex _) = return (LieBool True)
+complexp _              = return (LieBool False)
+strp (LieStr _)         = return (LieBool True)
+strp _                  = return (LieBool False)
+boolp (LieBool _)       = return (LieBool True)
+boolp _                 = return (LieBool False)
+vecp (LieVec _)         = return (LieBool True)
+vecp _                  = return (LieBool False)

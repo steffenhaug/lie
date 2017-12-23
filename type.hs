@@ -1,4 +1,4 @@
-module Type (LieVal (LieAtom, LieList, LieVec, LieInt, LieReal,LieComplex, LieStr, LieBool, LieNil)) where
+module Type where
 
 import Numeric
 import Data.Complex

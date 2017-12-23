@@ -19,8 +19,15 @@ eval (LieVec v)         = mapM eval v >>= return . LieVec
 eval (LieList [LieAtom "if", pred, conseq, alt]) = 
     do result <- eval pred
        case result of
-            LieBool True -> eval conseq
-            _            -> eval alt
+            LieBool True  -> eval conseq
+            LieBool False -> eval alt
+            a -> throwError $ TypeException "boolean" a
+eval (LieList [LieAtom "unless", pred, conseq, alt]) = 
+    do result <- eval pred
+       case result of
+            LieBool False -> eval conseq
+            LieBool True  -> eval alt
+            a -> throwError $ TypeException "boolean" a
 eval (LieList (LieAtom fn : argv)) = mapM eval argv >>= apply fn
 eval badform = throwError $ BadFormException "Unrecognized form" badform
 

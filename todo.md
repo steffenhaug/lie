@@ -28,11 +28,11 @@
     - partial application
 
 ### Short term:
-- *GIT GIT GIT GIT* i shalt break the interpreter irreversibly ... nevermore
-- Numeric functions *N E E D* to throw errors when the args are of wrong type
+- [22. Dec] *GIT GIT GIT GIT* i shalt break the interpreter irreversibly ... nevermore
+- [22. Dec] Numeric functions *N E E D* to throw errors when the args are of wrong type
 - [21. Dec] error handling
-- [on hold] refactoring
-    - in particular left-factoring number parsing
+- [on hold] refactoring. in particular:
+    - left-factoring number parsing
 - [21. Dec] split the module, at least into parser/primitives/main
 - [21. Dec] (Maybe) split the primitives module in types/exception/primitives
 
@@ -78,7 +78,11 @@ implement (special forms, expressive syntax, list comprehensions)
 
 (fn func x y z. do ...)
 
-(fn func [x y z] do ...)
+(fn square x. * x x)
+
+(λ x. * x x)
+
+(fn func (x y z) do ...)
 ```
 
 ### Switch, if/unmless notation options
