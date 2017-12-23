@@ -33,6 +33,7 @@
 - [21. Dec] error handling
 - [on hold] refactoring. in particular:
     - left-factoring number parsing
+    - left-factoring cond/case
 - [21. Dec] split the module, at least into parser/primitives/main
 - [21. Dec] (Maybe) split the primitives module in types/exception/primitives
 
@@ -92,7 +93,7 @@ implement (special forms, expressive syntax, list comprehensions)
  else
     (do ...))
 
-(switch expr on
+(case expr of
     k1 then v1.
     k2 then v2.
     k3 then v3.
@@ -103,10 +104,6 @@ implement (special forms, expressive syntax, list comprehensions)
 (switch x on 4 then "four". 5 then "five". _ then "unknown") ;; -> "five"
 
 (cond (predicate) then (do ...).
-      (predicate) then (do ...))
+      (predicate) then (do ...).
+                  else (do ...))
 ```
-
-LieList [Atom "case", expr, Atom "of", LieList v]
-
-v: LisList [[expr1, Atom "then", expr2, Atom "."], ...]
-result <- eval expr

@@ -21,6 +21,7 @@ parseExpr =  parseNumber
          <|> parseAtom
          <|> parseString
          <|> try parseCond
+         <|> parseCase
          <|> do char '(' -- maybe refactor these, they are kinda messy
                 l <- parseList
                 char ')'
@@ -87,7 +88,7 @@ parseReal = do
 
 toDouble :: LieVal -> Double
 toDouble (LieReal f) = realToFrac f
-toDouble (LieInt n) = fromIntegral n
+toDouble (LieInt n)  = fromIntegral n
 
 -- | parses numbers: a + bi
 parseComplex :: Parser LieVal
@@ -119,27 +120,40 @@ parseVec = do
 
 parseWildcardClause :: Parser LieVal
 parseWildcardClause =  do
-    e <- string "else"
+    string "else"
     spaces
     conseq <- parseExpr
-    return $ LieList [LieBool True, LieAtom "else", conseq, LieAtom "."]
+    return $ LieList [LieNil, LieAtom "else", conseq, LieAtom "."]
 
 parseClause :: Parser LieVal
 parseClause = try parseWildcardClause
            <|> do
                 predicate <- parseExpr
                 spaces
-                t <- string "then"
+                string "then"
                 spaces
                 conseq <- parseExpr
-                d <- char '.'
+                char '.'
                 return $ LieList [predicate, LieAtom "then", conseq, LieAtom "."]
 
 parseCond :: Parser LieVal
-parseCond =  do
+parseCond = do
     char '('
-    c <- string "cond"
+    string "cond"
     spaces
     clauses <- sepBy parseClause spaces
     char ')'
     return $ LieList [LieAtom "cond", LieList clauses]
+
+parseCase :: Parser LieVal
+parseCase = do
+    char '('
+    string "case"
+    spaces
+    expr <- parseExpr
+    spaces
+    string "of"
+    spaces
+    clauses <- sepBy parseClause spaces
+    char ')'
+    return $ LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]
