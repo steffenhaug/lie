@@ -1,5 +1,5 @@
 module Exception (LieException (ArityException, TypeException, BadArgumentException, ParserException, BadFormException, NotFunctionException, UnboundVariableException, Exception),
-                  ThrowsException, trapError, extractValue) where
+                  ThrowsException, trapException, extractValue) where
                     
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Control.Monad.Except
@@ -21,7 +21,7 @@ instance Show LieException where
         "Recieved (" ++ (show . length) argv ++ ") arguments: " ++
         unwords (map show argv)
     show (BadArgumentException fn expected argv) =
-        "Function " ++ fn ++ " expected argument of type " ++ expected ++ ". " ++
+        "Function " ++ fn ++ " expected arguments of type: " ++ expected ++ ". " ++
         "Recieved arguments: " ++ unwords (map show argv)
     show (TypeException expected found) =
         "Invalid type. Expected " ++ expected ++ ", found " ++ show found
@@ -36,7 +36,7 @@ instance Show LieException where
 
 type ThrowsException = Either LieException
 
-trapError action = catchError action (return . show)
+trapException action = catchError action (return . show)
 
 extractValue :: ThrowsException a -> a
 extractValue (Right val) = val
