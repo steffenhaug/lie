@@ -87,14 +87,26 @@ implement (special forms, expressive syntax, list comprehensions)
 
 ### Switch, if/unmless notation options
 ```
-(if () then ()
-         else ())
-(if (expr)
-    (expr)
-    (expr))
+(if (predicate) then
+    (do ...)
+ else
+    (do ...))
 
 (switch expr on
-    k1 -> v1.
-    k2 -> v2.
-    k3 -> v3)
+    k1 then v1.
+    k2 then v2.
+    k3 then v3.
+       else v4)
+
+(def x 5)
+(switch x on 4 -> "four". 5 -> "five". _ -> "unknown") ;; -> "five"
+(switch x on 4 then "four". 5 then "five". _ then "unknown") ;; -> "five"
+
+(cond (predicate) then (do ...).
+      (predicate) then (do ...))
 ```
+
+LieList [Atom "case", expr, Atom "of", LieList v]
+
+v: LisList [[expr1, Atom "then", expr2, Atom "."], ...]
+result <- eval expr

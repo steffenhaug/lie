@@ -1,4 +1,4 @@
-module Parser (readExpr) where
+module Parser where
 
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
@@ -20,6 +20,7 @@ parseExpr :: Parser LieVal
 parseExpr =  parseNumber
          <|> parseAtom
          <|> parseString
+         <|> try parseCond
          <|> do char '(' -- maybe refactor these, they are kinda messy
                 l <- parseList
                 char ')'
@@ -29,31 +30,27 @@ parseExpr =  parseNumber
                 char ']'
                 return v
 
--- TODO: make this: v <- delim '[' parser ']'
-
 symbol :: Parser Char
 symbol = oneOf "!$%+-&|*/:<=>?@^_~"
 
 spaces :: Parser ()
 spaces = skipMany1 space
 
-escapedChars :: Parser Char
-escapedChars = do
-    char '\\'
-    x <- oneOf "\\\"nrt"
-    return $ case x of
-        '\\' -> '\\'
-        '\"' -> '\"'
-        'n'  -> '\n'
-        'r'  -> '\r'
-        't'  -> '\t'
-
 parseString :: Parser LieVal
 parseString = do
     char '"'
-    x <- many $ escapedChars <|> noneOf "\""
+    x <- many $ escapedChar <|> noneOf "\""
     char '"'
     return (LieStr x)
+    where escapedChar = do
+            char '\\'
+            x <- oneOf "\\\"nrt"
+            return $ case x of
+                '\\' -> '\\'
+                '\"' -> '\"'
+                'n'  -> '\n'
+                'r'  -> '\r'
+                't'  -> '\t'
 
 parseAtom :: Parser LieVal
 parseAtom = do
@@ -92,7 +89,7 @@ toDouble :: LieVal -> Double
 toDouble (LieReal f) = realToFrac f
 toDouble (LieInt n) = fromIntegral n
 
--- | parses numbers a + bi
+-- | parses numbers: a + bi
 parseComplex :: Parser LieVal
 parseComplex = do
     x <- (try parseReal <|> parseInt)
@@ -103,7 +100,7 @@ parseComplex = do
     char 'i'
     return $ LieComplex (toDouble x :+ toDouble y)
 
--- | parses numbers bi (only imaginary part)
+-- | parses numbers: bi (only imaginary part)
 parseComplex' :: Parser LieVal
 parseComplex' = do
     x <- (try parseReal <|> parseInt)
@@ -119,3 +116,30 @@ parseVec :: Parser LieVal
 parseVec = do
     l <- sepBy parseExpr spaces
     return $ LieVec $ Vec.fromList l
+
+parseWildcardClause :: Parser LieVal
+parseWildcardClause =  do
+    e <- string "else"
+    spaces
+    conseq <- parseExpr
+    return $ LieList [LieBool True, LieAtom "else", conseq, LieAtom "."]
+
+parseClause :: Parser LieVal
+parseClause = try parseWildcardClause
+           <|> do
+                predicate <- parseExpr
+                spaces
+                t <- string "then"
+                spaces
+                conseq <- parseExpr
+                d <- char '.'
+                return $ LieList [predicate, LieAtom "then", conseq, LieAtom "."]
+
+parseCond :: Parser LieVal
+parseCond =  do
+    char '('
+    c <- string "cond"
+    spaces
+    clauses <- sepBy parseClause spaces
+    char ')'
+    return $ LieList [LieAtom "cond", LieList clauses]
