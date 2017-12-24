@@ -9,7 +9,6 @@ import Control.Monad.Except
 
 import Type
 import Primitive
-import Exception
 
 readExpr :: String -> ThrowsException LieVal
 readExpr input = case parse parseExpr ("Parsing Expression " ++ input) input of
@@ -20,19 +19,28 @@ parseExpr :: Parser LieVal
 parseExpr =  parseNumber
          <|> parseAtom
          <|> parseString
-         <|> try parseCond
-         <|> parseCase
-         <|> do char '(' -- maybe refactor these, they are kinda messy
-                l <- parseList
+         <|> do 
+                char '(' 
+                l <- parseListLike
                 char ')'
                 return l
-         <|> do char '['
-                v <- parseVec
+         <|> do 
+                char '['
+                l <- parseVec
                 char ']'
-                return v
+                return l
+                
+parseListLike :: Parser LieVal
+parseListLike = do
+    l <-  try parseCond
+      <|> try parseCase
+      <|> try parseLambda
+      <|> try parseFunction
+      <|> parseList
+    return l
 
 symbol :: Parser Char
-symbol = oneOf "!$%+-&|*/:<=>?@^_~"
+symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -138,16 +146,13 @@ parseClause = try parseWildcardClause
 
 parseCond :: Parser LieVal
 parseCond = do
-    char '('
     string "cond"
     spaces
     clauses <- sepBy parseClause spaces
-    char ')'
     return $ LieList [LieAtom "cond", LieList clauses]
 
 parseCase :: Parser LieVal
 parseCase = do
-    char '('
     string "case"
     spaces
     expr <- parseExpr
@@ -155,5 +160,39 @@ parseCase = do
     string "of"
     spaces
     clauses <- sepBy parseClause spaces
-    char ')'
     return $ LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]
+
+    
+parseFunctionBody :: Parser [LieVal]
+parseFunctionBody = do
+    x <- option "" (string "(")
+    case x of
+        ""  -> do
+            l <- parseListLike
+            return [l]
+        "(" -> do
+            l <- parseListLike
+            char ')'
+            return [l]
+
+parseLambda :: Parser LieVal
+parseLambda = do
+    string "lambda" <|> string "λ"
+    spaces
+    argv <- sepBy parseAtom spaces
+    char '.'
+    spaces
+    expr <- parseFunctionBody
+    return $ LieList (LieAtom "lambda" : LieList argv : expr)
+
+parseFunction :: Parser LieVal
+parseFunction = do
+    string "fn"
+    spaces
+    symbol <- parseAtom
+    spaces
+    argv <- sepBy parseAtom spaces
+    char '.'
+    spaces
+    expr <- parseFunctionBody
+    return $ LieList [LieAtom "def", symbol, LieList (LieAtom "lambda": LieList argv : expr)]

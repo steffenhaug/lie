@@ -27,6 +27,12 @@
     - automatic currying
     - partial application
 
+### Data structures
+- maps (radix trees or hash maps)
+- sets (binary tree)
+- queue / stack
+    - other types of queue structures (min/max binary heaps)
+
 ### Short term:
 - [22. Dec] *GIT GIT GIT GIT* i shalt break the interpreter irreversibly ... nevermore
 - [22. Dec] Numeric functions *N E E D* to throw errors when the args are of wrong type
@@ -36,8 +42,14 @@
     - left-factoring cond/case
 - [21. Dec] split the module, at least into parser/primitives/main
 - [21. Dec] (Maybe) split the primitives module in types/exception/primitives
+- [] special forms
+    - [23. Dec] if/unless
+    - [23. Dec] case-on/cond
+    - let / do
+    - threading
 
 ### Nice to haves:
+- [23. dec] port REPL to readline
 - parser for delimited sequences ('[' a b c ... ']' etc.)
 - left-factor parsers for common subsequences
 
@@ -46,8 +58,8 @@ splitting/refactoring the parser should make new patterns easier to
 implement (special forms, expressive syntax, list comprehensions)
 
 ### Long term:
-- lexical scopes, environments
-- symbol definitions
+- [24. Dec] lexical scopes, environments
+- [24. Dec] symbol definitions / mutation
 - let / do constructs for imperative programming
 
 - assosciative datastructure (hashmap/search tree/trie)
@@ -99,6 +111,11 @@ implement (special forms, expressive syntax, list comprehensions)
     k3 then v3.
        else v4)
 
+(case x of
+    4 then "foobar".
+    5 then "loodar".
+    6 then "zoogar".)
+
 (def x 5)
 (switch x on 4 -> "four". 5 -> "five". _ -> "unknown") ;; -> "five"
 (switch x on 4 then "four". 5 then "five". _ then "unknown") ;; -> "five"
@@ -106,4 +123,20 @@ implement (special forms, expressive syntax, list comprehensions)
 (cond (predicate) then (do ...).
       (predicate) then (do ...).
                   else (do ...))
+```
+
+### Example functions
+```
+(fn decr n. - n 1)
+
+(fn fib n.
+    cond (zero? n) then 1.
+         (one? n)  then 1.
+                   else (+ n (fib . decr n)))
+
+(fn fib n.
+    case n of
+        0 then 1.
+        1 then 1.
+          else (+ n (fib . decr n)))
 ```

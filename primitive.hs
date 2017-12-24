@@ -6,7 +6,6 @@ import Control.Monad.Except
 import qualified Data.Vector as Vec
 
 import Type
-import Exception
 
 primitives :: [(String, [LieVal] -> ThrowsException LieVal)]
 primitives = [("id",        unaryOp (\x -> return x)),
@@ -37,11 +36,6 @@ primitives = [("id",        unaryOp (\x -> return x)),
               ("complex?",  unaryOp complexp),
               ("atom?",     unaryOp atomp),
               ("vec?",      unaryOp vecp)]
-
-apply :: String -> [LieVal] -> ThrowsException LieVal
-apply fn argv = maybe (throwError $ NotFunctionException "Unrecognized primitive function" fn)
-                      ($ argv)
-                      (lookup fn primitives)
 
 unaryOp :: (LieVal -> ThrowsException LieVal) -> [LieVal] -> ThrowsException LieVal
 unaryOp fn []  = throwError $ ArityException 1 []
