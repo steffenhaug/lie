@@ -1,5 +1,5 @@
 # Lie
-#### Pronounced (/liː/ LEE)
+#### Pronounced (/liː/ LEE), named after norwegian mathematician [Sophus Lie](https://en.wikipedia.org/wiki/Sophus_Lie).
 
 Lie is a lisp-like programming language implemented in haskell, loosely based on the 
 ["Write yourself a Scheme in 48 hours"](https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours)
