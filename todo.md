@@ -46,7 +46,7 @@
     - [23. Dec] if/unless
     - [23. Dec] case-on/cond
     - let / do
-    - threading
+    - threading (clojure ->>) or equivalent
 
 ### Nice to haves:
 - [23. dec] port REPL to readline
@@ -65,7 +65,7 @@ implement (special forms, expressive syntax, list comprehensions)
 - assosciative datastructure (hashmap/search tree/trie)
 - sets or some other unordered elem/not elem data structure
 
-- functions and lambdas (dep. lexical scoping)
+- [24. Dec] functions and lambdas (dep. lexical scoping)
     - partial application and automatic currying
 - include-functionality
 
@@ -79,7 +79,7 @@ implement (special forms, expressive syntax, list comprehensions)
 - Implement arrays as vector tries a-la clojure
 - Monads (*at least* Maybe)
     - then we need >>= in some form to fight verbosity
-- ez regex syntax
+- easy basic regex syntax (perl compatible, with /expr/-notation)
 
 ### Lambda, function notation options
 ```
@@ -125,6 +125,20 @@ implement (special forms, expressive syntax, list comprehensions)
                   else (do ...))
 ```
 
+### Let notation
+```
+(let a <- 5.
+     b <- 7.
+ in (+ a b))
+
+ ;; convert to ((lambda a b. + x y) 5 7)
+
+(fn foldl fun acc vec.
+    let x  <- (head vec).
+        xs <- (tail vec).
+    in foldl fun (fun acc x) xs)
+```
+
 ### Example functions
 ```
 (fn decr n. - n 1)
@@ -139,4 +153,9 @@ implement (special forms, expressive syntax, list comprehensions)
         0 then 1.
         1 then 1.
           else (+ n (fib . decr n)))
+
+(fn collatz n.
+    case (mod n 2) of
+        0 then (div n 2).
+          else (+ 1 (* 3 n)))
 ```

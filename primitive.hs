@@ -4,12 +4,12 @@ import Numeric
 import Data.Complex
 import Control.Monad.Except
 import qualified Data.Vector as Vec
+import System.IO
 
 import Type
 
 primitives :: [(String, [LieVal] -> ThrowsException LieVal)]
-primitives = [("id",        unaryOp (\x -> return x)),
-              ("+",         foldV  lieAdd),
+primitives = [("+",         foldV  lieAdd),
               ("-",         foldV' lieSub (LieInt 0)),
               ("*",         foldV  lieMul),
               ("/",         foldV' lieRealDiv (LieInt 1)),
@@ -24,12 +24,13 @@ primitives = [("id",        unaryOp (\x -> return x)),
               ("xor",       binaryOp lieXor),
               ("all",       foldV lieAnd),
               ("any",       foldV lieOr),
-              ("not",       unaryOp lieNot),
               ("div",       foldV lieDiv),
               ("mod",       foldV lieMod),
               ("im",        unaryOp lieIm),
               ("re",        unaryOp lieRe),
               ("conj",      lieConj),
+              ("head",      lieHead),
+              ("tail",      lieTail),
               ("int?",      unaryOp intp),
               ("str?",      unaryOp strp),
               ("real?",     unaryOp realp),
@@ -53,6 +54,21 @@ lieConj [] = throwError $ ArityException 1 []
 lieConj v = return . LieVec $ (foldl1 (Vec.++) . map extractVector) v
             where 
                 extractVector (LieVec v) = v
+
+lieHead :: [LieVal] -> ThrowsException LieVal
+lieHead [] = throwError $ ArityException 1 []
+lieHead (LieVec v:[]) = return $ Vec.head v
+lieHead argv@(_:_) = throwError $ ArityException 1 argv
+
+lieTail :: [LieVal] -> ThrowsException LieVal
+lieTail [] = throwError $ ArityException 1 []
+lieTail (LieVec v:[]) = return $ LieVec (Vec.tail v)
+lieTail argv@(_:_) = throwError $ ArityException 1 argv
+
+lieLast :: [LieVal] -> ThrowsException LieVal
+lieLast [] = throwError $ ArityException 1 []
+lieLast (LieVec v:[]) = return $ Vec.last v
+lieLast argv@(_:_) = throwError $ ArityException 1 argv
 
 foldV' :: (LieVal -> LieVal -> ThrowsException LieVal) -> LieVal -> [LieVal] -> ThrowsException LieVal
 foldV' fn a [] = throwError $ ArityException 1 []
@@ -170,11 +186,6 @@ lieOr a b = throwError $ BadArgumentException "or" "boolean, boolean" [a, b]
 lieXor :: LieVal -> LieVal -> ThrowsException LieVal
 lieXor (LieBool i) (LieBool j) = return $ LieBool $ (i || j) && not (i && j)
 lieXor a b = throwError $ BadArgumentException "xor" "boolean, boolean" [a, b]
-
-lieNot :: LieVal -> ThrowsException LieVal
-lieNot (LieBool True)  = return (LieBool False)
-lieNot (LieBool False) = return (LieBool True)
-lieNot badarg = throwError $ BadArgumentException "not" "boolean" [badarg]
 
 atomp, intp, realp, complexp, strp, boolp, vecp :: LieVal -> ThrowsException LieVal
 atomp (LieAtom _)       = return (LieBool True)

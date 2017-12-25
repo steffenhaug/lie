@@ -4,6 +4,7 @@ import System.Environment
 import System.IO
 import System.Console.Readline
 import Control.Monad.Except
+import qualified Data.Vector as Vec
 
 import Parser
 import Type
@@ -11,6 +12,7 @@ import Primitive
 import Env
 
 apply :: LieVal -> [LieVal] -> IOThrowsException LieVal
+apply (LieIOPrimitive func) argv = func argv
 apply (LiePrimitive func) argv = liftThrows $ func argv
 apply (LieFunction params body closure) argv =
     if num params /= num argv
@@ -19,6 +21,44 @@ apply (LieFunction params body closure) argv =
     where
         num = toInteger . length
         evalBody env = liftM last $ mapM (eval env) body
+apply x _ = return x
+
+applyProc :: [LieVal] -> IOThrowsException LieVal
+applyProc [func, LieList args] = apply func args
+applyProc (func : args)        = apply func args
+
+makePort :: IOMode -> [LieVal] -> IOThrowsException LieVal
+makePort mode [LieStr filename] = liftM LiePort $ liftIO $ openFile filename mode
+
+closePort :: [LieVal] -> IOThrowsException LieVal
+closePort [LiePort port] = liftIO $ hClose port >> (return $ LieBool True)
+closePort _           = return $ LieBool False
+
+readProc :: [LieVal] -> IOThrowsException LieVal
+readProc []          = readProc [LiePort stdin]
+readProc [LiePort port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
+
+writeProc :: [LieVal] -> IOThrowsException LieVal
+writeProc [obj]            = writeProc [obj, LiePort stdout]
+writeProc [obj, LiePort port] = liftIO $ hPrint port obj >> (return $ LieBool True)
+
+ioPrimitives :: [(String, [LieVal] -> IOThrowsException LieVal)]
+ioPrimitives = [("apply", applyProc),
+                ("open-input-file", makePort ReadMode),
+                ("open-output-file", makePort WriteMode),
+                ("close-input-port", closePort),
+                ("close-output-port", closePort),
+                ("read", readProc),
+                ("write", writeProc),
+                ("read-contents", readContents),
+                ("read-all", readAll)]
+
+primitiveBindings :: IO Env
+primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc LieIOPrimitive) ioPrimitives
+                                            ++ map (makeFunc LiePrimitive) primitives)
+    where makeFunc constructor (var, func) = (var, constructor func)
+                 
+
 
 eval :: Env -> LieVal -> IOThrowsException LieVal
 -- basic forms evaluate to themselves
@@ -34,6 +74,9 @@ eval env (LieAtom symbol) = getVar env symbol
 
 -- vector
 eval env (LieVec v) = mapM (eval env) v >>= return . LieVec
+
+eval env (LieList [LieAtom "include", LieStr filename]) = 
+    load filename >>= liftM last . mapM (eval env)
 
 -- if-then-else
 eval env (LieList [LieAtom "if", pred, LieAtom "then", conseq, LieAtom "else", alt]) = 
@@ -77,14 +120,14 @@ eval env (LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]) =
 -- mutate a defined symbol
 eval env (LieList [LieAtom "set!", LieAtom var, form]) =
     eval env form >>= setVar env var
-                
+
 -- symbol definition
 eval env (LieList [LieAtom "def", LieAtom var, form]) = eval env form >>= defineVar env var
 
 -- lambda
 eval env (LieList (LieAtom "lambda" : LieList params : body)) = makeFunc env params body
 
--- primitive function application
+-- function application
 eval env (LieList (fn : argv)) = do
     func <- eval env fn
     argVals <- mapM (eval env) argv
@@ -109,22 +152,25 @@ repl env = do
     maybeLine <- readline "Lie >> "
     case maybeLine of 
         Nothing     -> return () -- EOF / control-d
-        Just "exit" -> return ()
+        Just ":q"   -> return ()
         Just line   -> do addHistory line
                           evalAndPrint env line
                           repl env
 
-runOne :: String -> IO ()
-runOne expr = primitiveBindings >>= flip evalAndPrint expr
+runOne :: [String] -> IO ()
+runOne args = do
+    env <- primitiveBindings >>= flip bindVars [("argv", LieVec $ Vec.fromList $ map LieStr $ drop 1 args)] 
+    (runIOThrows $ liftM show $ eval env (LieList [LieAtom "include", LieStr (args !! 0)])) 
+        >>= hPutStrLn stderr
+
 
 runRepl :: IO ()
 runRepl = primitiveBindings >>= repl
 
 main :: IO ()
 main = do args <- getArgs
-          case length args of
-                  0 -> do
-                    putStrLn "Lie Interpreter version 0.1. Type \"exit\", or press Ctr-D to exit."
-                    runRepl
-                  1 -> runOne $ args !! 0
-                  otherwise -> putStrLn "Program takes only 0 or 1 argument"
+          if null args
+            then do 
+              putStrLn "Lie Interpreter version 0.1. Type \"exit\", or press Ctr-D to exit."
+              runRepl
+            else runOne $ args

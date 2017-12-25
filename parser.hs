@@ -6,14 +6,13 @@ import Numeric
 import Data.Complex
 import qualified Data.Vector as Vec
 import Control.Monad.Except
+import System.IO
 
 import Type
 import Primitive
 
-readExpr :: String -> ThrowsException LieVal
-readExpr input = case parse parseExpr ("Parsing Expression " ++ input) input of
-    Left err  -> throwError $ ParserException err
-    Right val -> return val
+readExpr = readOrThrow parseExpr
+readExprList = readOrThrow (endBy parseExpr spaces)
 
 parseExpr :: Parser LieVal
 parseExpr =  parseNumber
@@ -29,14 +28,31 @@ parseExpr =  parseNumber
                 l <- parseVec
                 char ']'
                 return l
-                
+         <?> "Expression"
+
+readOrThrow :: Parser a -> String -> ThrowsException a
+readOrThrow parser input = case parse parser "Parsing expression " input of
+    Left err  -> throwError $ ParserException err
+    Right val -> return val
+
+readContents :: [LieVal] -> IOThrowsException LieVal
+readContents [LieStr filename] = liftM LieStr $ liftIO $ readFile filename
+
+load :: String -> IOThrowsException [LieVal]
+load filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
+
+readAll :: [LieVal] -> IOThrowsException LieVal
+readAll [LieStr filename] = liftM LieList $ load filename
+
 parseListLike :: Parser LieVal
 parseListLike = do
     l <-  try parseCond
       <|> try parseCase
+      <|> try parseLet
       <|> try parseLambda
       <|> try parseFunction
       <|> parseList
+      <?> "List-like"
     return l
 
 symbol :: Parser Char
@@ -161,7 +177,6 @@ parseCase = do
     spaces
     clauses <- sepBy parseClause spaces
     return $ LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]
-
     
 parseFunctionBody :: Parser [LieVal]
 parseFunctionBody = do
@@ -196,3 +211,28 @@ parseFunction = do
     spaces
     expr <- parseFunctionBody
     return $ LieList [LieAtom "def", symbol, LieList (LieAtom "lambda": LieList argv : expr)]
+
+parseLetClause :: Parser (LieVal, LieVal)
+parseLetClause = do
+    key <- parseAtom
+    spaces
+    string "<-"
+    spaces
+    value <- parseExpr
+    char '.'
+    return $ (key, value)
+
+parseLet :: Parser LieVal
+parseLet = do
+    string "let"
+    spaces
+    bindings <- endBy (try parseLetClause) spaces
+    string "in"
+    spaces
+    expr <- parseFunctionBody
+    return $ convertToLambda bindings expr
+    where
+        convertToLambda bindings' expr' =
+            let (keys, vals) = split bindings' 
+            in LieList (LieList (LieAtom "lambda" : LieList keys : expr'):vals)
+            where split l = ([fst x | x <- l], [snd x | x <- l])

@@ -6,6 +6,7 @@ import Data.IORef
 import qualified Data.Vector as Vec
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Control.Monad.Except
+import System.IO
 
 type Env = IORef [(String, IORef LieVal)]
 
@@ -20,6 +21,8 @@ data LieVal = LieNil
             | LieBool Bool
             | LiePrimitive ([LieVal] -> ThrowsException LieVal)
             | LieFunction {params :: [String], body :: [LieVal], closure :: Env}
+            | LieIOPrimitive ([LieVal] -> IOThrowsException LieVal)
+            | LiePort Handle
 
 -- Eq instance for primitives, everything else assumed unequal
 instance Eq LieVal where
@@ -44,9 +47,11 @@ instance Show LieVal where
     show LieNil              = "Nil"
     show (LieList l)         = "(" ++ (unwords . map show) l ++ ")"
     show (LieVec v)          = "[" ++ (unwords . map show . Vec.toList) v ++ "]"
-    show (LiePrimitive _)    = "<primitive function>"
+    show (LiePrimitive _)    = "<primitive>"
     show (LieFunction {params = args, body = body, closure = env}) =
         "(λ " ++ unwords args ++ ". <...>)"
+    show (LieIOPrimitive _)  = "<io primitive>"
+    show (LiePort _)            = "<io port>"
 
 data LieException = ArityException Integer [LieVal]
                   | TypeException String LieVal
@@ -55,6 +60,7 @@ data LieException = ArityException Integer [LieVal]
                   | BadFormException String LieVal
                   | NotFunctionException String String
                   | UnboundVariableException String String
+                  | AlreadyDefinedException String
                   | Exception String
 
 type IOThrowsException = ExceptT LieException IO
@@ -82,6 +88,8 @@ instance Show LieException where
         message ++ ": " ++ show function
     show (UnboundVariableException message symbol) =
         message ++ ": " ++ symbol
+    show (AlreadyDefinedException symbol) =
+        "Symbol " ++ symbol ++ " is already defined!"
 
 trapException action = catchError action (return . show)
 

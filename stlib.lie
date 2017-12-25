@@ -1,0 +1,10 @@
+(fn id a. a)
+
+(fn not a.
+    if a then False
+         else True)
+
+(fn incr n. + n 1)
+
+(fn decr n. - n 1)
+
