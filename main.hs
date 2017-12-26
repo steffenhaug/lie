@@ -20,11 +20,11 @@ apply (LieFunction params body closure) argv =
         else (liftIO $ bindVars closure $ zip params argv) >>= evalBody
     where
         num = toInteger . length
-        evalBody env = liftM last $ mapM (eval env) body
-apply x _ = return x
+        evalBody env = eval env body
 
 applyProc :: [LieVal] -> IOThrowsException LieVal
 applyProc [func, LieList args] = apply func args
+applyProc [func, LieVec argv]  = apply func $ Vec.toList argv
 applyProc (func : args)        = apply func args
 
 makePort :: IOMode -> [LieVal] -> IOThrowsException LieVal
@@ -125,7 +125,7 @@ eval env (LieList [LieAtom "set!", LieAtom var, form]) =
 eval env (LieList [LieAtom "def", LieAtom var, form]) = eval env form >>= defineVar env var
 
 -- lambda
-eval env (LieList (LieAtom "lambda" : LieList params : body)) = makeFunc env params body
+eval env (LieList [LieAtom "lambda", LieList params, body]) = makeFunc env params body
 
 -- function application
 eval env (LieList (fn : argv)) = do

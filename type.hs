@@ -20,7 +20,7 @@ data LieVal = LieNil
             | LieStr String
             | LieBool Bool
             | LiePrimitive ([LieVal] -> ThrowsException LieVal)
-            | LieFunction {params :: [String], body :: [LieVal], closure :: Env}
+            | LieFunction {params :: [String], body :: LieVal, closure :: Env}
             | LieIOPrimitive ([LieVal] -> IOThrowsException LieVal)
             | LiePort Handle
 
@@ -96,5 +96,5 @@ trapException action = catchError action (return . show)
 extractValue :: ThrowsException a -> a
 extractValue (Right val) = val
 
-
-makeFunc env params body = return $ LieFunction (map show params) body env
+makeFunc env params body = return $ LieFunction (map extractAtom params) body env
+                           where extractAtom (LieAtom symbol) = symbol

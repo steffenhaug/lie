@@ -12,7 +12,7 @@ import Type
 import Primitive
 
 readExpr = readOrThrow parseExpr
-readExprList = readOrThrow (endBy parseExpr spaces)
+readExprList = readOrThrow (endBy parseExpr (spaces <|> eof <|> skipMany (char '\n')))
 
 parseExpr :: Parser LieVal
 parseExpr =  parseNumber
@@ -157,14 +157,13 @@ parseClause = try parseWildcardClause
                 string "then"
                 spaces
                 conseq <- parseExpr
-                char '.'
                 return $ LieList [predicate, LieAtom "then", conseq, LieAtom "."]
 
 parseCond :: Parser LieVal
 parseCond = do
     string "cond"
     spaces
-    clauses <- sepBy parseClause spaces
+    clauses <- sepBy parseClause (do {char '.'; many space})
     return $ LieList [LieAtom "cond", LieList clauses]
 
 parseCase :: Parser LieVal
@@ -175,20 +174,23 @@ parseCase = do
     spaces
     string "of"
     spaces
-    clauses <- sepBy parseClause spaces
+    clauses <- sepBy parseClause (do {char '.'; many space})
     return $ LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]
-    
-parseFunctionBody :: Parser [LieVal]
-parseFunctionBody = do
-    x <- option "" (string "(")
-    case x of
-        ""  -> do
-            l <- parseListLike
-            return [l]
-        "(" -> do
-            l <- parseListLike
-            char ')'
-            return [l]
+
+-- | parser for function bodies. not that this parser assumes it
+-- | is parsing a list, so we could end up with singleton function
+-- | bodies, like (x), which would not evaluate properly. this case
+-- | is accounted for by "extractSingleton".
+parseFunctionBody :: Parser LieVal
+parseFunctionBody = 
+    do
+        l <- parseListLike
+        return $ extractSingleton l
+    where
+        -- extract the value from a singleton list
+        extractSingleton li@(LieList l) = case length l of
+            1 -> head l
+            _ -> li
 
 parseLambda :: Parser LieVal
 parseLambda = do
@@ -198,7 +200,7 @@ parseLambda = do
     char '.'
     spaces
     expr <- parseFunctionBody
-    return $ LieList (LieAtom "lambda" : LieList argv : expr)
+    return $ LieList [LieAtom "lambda", LieList argv, expr]
 
 parseFunction :: Parser LieVal
 parseFunction = do
@@ -210,7 +212,7 @@ parseFunction = do
     char '.'
     spaces
     expr <- parseFunctionBody
-    return $ LieList [LieAtom "def", symbol, LieList (LieAtom "lambda": LieList argv : expr)]
+    return $ LieList [LieAtom "def", symbol, LieList [LieAtom "lambda", LieList argv, expr]]
 
 parseLetClause :: Parser (LieVal, LieVal)
 parseLetClause = do
@@ -219,14 +221,13 @@ parseLetClause = do
     string "<-"
     spaces
     value <- parseExpr
-    char '.'
     return $ (key, value)
 
 parseLet :: Parser LieVal
 parseLet = do
     string "let"
     spaces
-    bindings <- endBy (try parseLetClause) spaces
+    bindings <- endBy (try parseLetClause) (do {char '.'; many space})
     string "in"
     spaces
     expr <- parseFunctionBody
@@ -234,5 +235,5 @@ parseLet = do
     where
         convertToLambda bindings' expr' =
             let (keys, vals) = split bindings' 
-            in LieList (LieList (LieAtom "lambda" : LieList keys : expr'):vals)
+            in LieList (LieList [LieAtom "lambda", LieList keys, expr']:vals)
             where split l = ([fst x | x <- l], [snd x | x <- l])

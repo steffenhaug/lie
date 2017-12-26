@@ -1,4 +1,4 @@
-(fn id a. a)
+(fn id x. x)
 
 (fn not a.
     if a then False
@@ -7,4 +7,35 @@
 (fn incr n. + n 1)
 
 (fn decr n. - n 1)
+
+(fn zero? x. = 0 x)
+
+(fn one? x. = 1 x)
+
+(fn odd? x. = one? (mod x 2))
+
+(fn even? x. = zero? (mod x 2))
+
+(fn square x. * x x)
+
+(fn cons x xs. conj [x] xs)
+
+(fn append x xs. conj xs [x])
+
+(fn empty? vec. = [] vec)
+
+(fn flip f. λ x y. f y x)
+
+(fn foldl fun acc vec.
+    if (empty? vec) then []
+    else 
+       (let v  <- (head vec).
+            vs <- (tail vec).
+        in case vs of
+            [] then (fun acc v).
+            else (foldl fun (fun acc v) vs)))
+
+(fn map fun vec.
+    let Γ <- (λ xs x. append (fun x) xs).
+    in foldl Γ [] vec)
 

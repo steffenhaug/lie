@@ -60,14 +60,15 @@ implement (special forms, expressive syntax, list comprehensions)
 ### Long term:
 - [24. Dec] lexical scopes, environments
 - [24. Dec] symbol definitions / mutation
-- let / do constructs for imperative programming
+- [25. Dec] let construct for imperative programming
+- *CURRYING*
 
 - assosciative datastructure (hashmap/search tree/trie)
 - sets or some other unordered elem/not elem data structure
 
 - [24. Dec] functions and lambdas (dep. lexical scoping)
     - partial application and automatic currying
-- include-functionality
+- [25. Dec] include-functionality
 
 #### Libraries
 - Linear algebra
@@ -137,6 +138,11 @@ implement (special forms, expressive syntax, list comprehensions)
     let x  <- (head vec).
         xs <- (tail vec).
     in foldl fun (fun acc x) xs)
+```
+
+### Currying and parial application
+```
+(f x y z) -> (((f x) y) z) = 
 ```
 
 ### Example functions

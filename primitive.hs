@@ -57,12 +57,16 @@ lieConj v = return . LieVec $ (foldl1 (Vec.++) . map extractVector) v
 
 lieHead :: [LieVal] -> ThrowsException LieVal
 lieHead [] = throwError $ ArityException 1 []
-lieHead (LieVec v:[]) = return $ Vec.head v
+lieHead (LieVec v:[]) = return $ case Vec.length v of
+                                    0 -> LieNil
+                                    _ -> Vec.head v
 lieHead argv@(_:_) = throwError $ ArityException 1 argv
 
 lieTail :: [LieVal] -> ThrowsException LieVal
 lieTail [] = throwError $ ArityException 1 []
-lieTail (LieVec v:[]) = return $ LieVec (Vec.tail v)
+lieTail (LieVec v:[]) = return $ case Vec.length v of
+                                    0 -> LieNil
+                                    _ -> LieVec (Vec.tail v)
 lieTail argv@(_:_) = throwError $ ArityException 1 argv
 
 lieLast :: [LieVal] -> ThrowsException LieVal
