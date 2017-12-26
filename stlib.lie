@@ -12,9 +12,9 @@
 
 (fn one? x. = 1 x)
 
-(fn odd? x. = one? (mod x 2))
+(fn odd? x. one? (mod x 2))
 
-(fn even? x. = zero? (mod x 2))
+(fn even? x. zero? (mod x 2))
 
 (fn square x. * x x)
 
@@ -37,5 +37,9 @@
 
 (fn map fun vec.
     let Γ <- (λ xs x. append (fun x) xs).
+    in foldl Γ [] vec)
+
+(fn filter pred vec.
+    let Γ <- (λ xs x. if (pred x) then (append x xs) else xs).
     in foldl Γ [] vec)
 
