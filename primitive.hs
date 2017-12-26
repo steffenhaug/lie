@@ -22,8 +22,6 @@ primitives = [("+",         foldV  lieAdd),
               ("and",       binaryOp lieAnd),
               ("or",        binaryOp lieOr),
               ("xor",       binaryOp lieXor),
-              ("all",       foldV lieAnd),
-              ("any",       foldV lieOr),
               ("div",       foldV lieDiv),
               ("mod",       foldV lieMod),
               ("im",        unaryOp lieIm),
@@ -31,6 +29,7 @@ primitives = [("+",         foldV  lieAdd),
               ("conj",      lieConj),
               ("head",      lieHead),
               ("tail",      lieTail),
+              ("length",    lieLen),
               ("int?",      unaryOp intp),
               ("str?",      unaryOp strp),
               ("real?",     unaryOp realp),
@@ -49,6 +48,11 @@ binaryOp fn [x]    = throwError $ ArityException 2 [x]
 binaryOp fn [x, y] = fn x y
 binaryOp fn v      = throwError $ ArityException 2 v
 
+lieLen :: [LieVal] -> ThrowsException LieVal
+lieLen [] = throwError $ ArityException 1 []
+lieLen (LieVec v:[]) = return $ LieInt . fromIntegral $ Vec.length v
+lieLen argv = throwError $ ArityException 1 argv
+
 lieConj :: [LieVal] -> ThrowsException LieVal
 lieConj [] = throwError $ ArityException 1 []
 lieConj v = return . LieVec $ (foldl1 (Vec.++) . map extractVector) v
@@ -60,7 +64,7 @@ lieHead [] = throwError $ ArityException 1 []
 lieHead (LieVec v:[]) = return $ case Vec.length v of
                                     0 -> LieNil
                                     _ -> Vec.head v
-lieHead argv@(_:_) = throwError $ ArityException 1 argv
+lieHead argv = throwError $ ArityException 1 argv
 
 lieTail :: [LieVal] -> ThrowsException LieVal
 lieTail [] = throwError $ ArityException 1 []

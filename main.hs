@@ -32,14 +32,14 @@ makePort mode [LieStr filename] = liftM LiePort $ liftIO $ openFile filename mod
 
 closePort :: [LieVal] -> IOThrowsException LieVal
 closePort [LiePort port] = liftIO $ hClose port >> (return $ LieBool True)
-closePort _           = return $ LieBool False
+closePort _              = return $ LieBool False
 
 readProc :: [LieVal] -> IOThrowsException LieVal
-readProc []          = readProc [LiePort stdin]
+readProc []            = readProc [LiePort stdin]
 readProc [LiePort port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
 
 writeProc :: [LieVal] -> IOThrowsException LieVal
-writeProc [obj]            = writeProc [obj, LiePort stdout]
+writeProc [obj]              = writeProc [obj, LiePort stdout]
 writeProc [obj, LiePort port] = liftIO $ hPrint port obj >> (return $ LieBool True)
 
 ioPrimitives :: [(String, [LieVal] -> IOThrowsException LieVal)]

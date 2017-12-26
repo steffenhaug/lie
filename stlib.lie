@@ -1,16 +1,24 @@
 (fn id x. x)
 
-(fn not a.
-    if a then False
-         else True)
+(fn curry fun arg1. lambda arg. apply fun arg1 arg)
+
+(fn not a. if a then False else True)
 
 (fn incr n. + n 1)
 
 (fn decr n. - n 1)
 
-(fn zero? x. = 0 x)
+(def zero? (curry = 0))
 
-(fn one? x. = 1 x)
+(def one? (curry = 1))
+
+(def positive? (curry > 0))
+
+(def negative? (curry < 0))
+
+(fn max x y. if (< x y) then y else x)
+
+(fn min x y. if (< x y) then x else y)
 
 (fn odd? x. one? (mod x 2))
 
@@ -24,22 +32,62 @@
 
 (fn empty? vec. = [] vec)
 
+(fn singleton? vec. one? (length vec))
+
 (fn flip f. λ x y. f y x)
 
 (fn foldl fun acc vec.
-    if (empty? vec) then []
-    else 
-       (let v  <- (head vec).
-            vs <- (tail vec).
-        in case vs of
-            [] then (fun acc v).
-            else (foldl fun (fun acc v) vs)))
+  let v  <- (head vec).
+      vs <- (tail vec).
+  in if (empty? vec) then acc
+     else (foldl fun (fun acc v) vs))
+
+(fn foldr fun end vec.
+  let v  <- (head vec).
+      vs <- (tail vec).
+  in if (empty? vec) then end
+     else (fun v (foldr fun end vs)))	
+
+(fn unfold fun init pred.
+    if (pred init) then [init]
+    else (cons init (unfold fun (fun init) pred)))
+
+(fn reduce fun vec.
+  let v  <- (head vec).
+      vs <- (tail vec).
+  in foldl fun v vs)
 
 (fn map fun vec.
-    let Γ <- (λ xs x. append (fun x) xs).
-    in foldl Γ [] vec)
+  let Γ <- (λ x xs. cons (fun x) xs).
+  in foldr Γ [] vec)
+
+(fn mapfilter fun pred vec.
+  let v  <- (head vec).
+      vs <- (tail vec).
+      Γ  <- (λ x xs. let x' <- (fun x).
+	       	     in if (pred x') then (cons x' xs) else xs).
+  in foldr Γ [] vec)
 
 (fn filter pred vec.
-    let Γ <- (λ xs x. if (pred x) then (append x xs) else xs).
-    in foldl Γ [] vec)
+    let Γ <- (λ x xs. if (pred x) then (cons x xs) else xs).
+    in foldr Γ [] vec)
 
+(def all (curry reduce and))
+
+(def any (curry reduce or))
+
+(def sup (curry reduce max))
+
+(def inf (curry reduce min))
+
+(def sum (curry reduce +))
+
+(def Σ sum)
+
+(def product (curry reduce *))
+
+(def Π product)
+
+(fn naturals n. unfold incr 1 (curry = n))
+
+(fn reverse vec. foldr append [] vec)
