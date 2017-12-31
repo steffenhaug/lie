@@ -61,6 +61,13 @@ symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
 spaces :: Parser ()
 spaces = skipMany1 space
 
+comment :: Parser LieVal
+comment = do
+  string "--"
+  skipMany anyChar
+  skipMany (char '\n') <|> eof
+  return LieComment
+
 parseString :: Parser LieVal
 parseString = do
     char '"'
@@ -144,20 +151,20 @@ parseVec = do
 
 parseWildcardClause :: Parser LieVal
 parseWildcardClause =  do
-    string "else"
+    string "else:"
     spaces
     conseq <- parseExpr
-    return $ LieList [LieNil, LieAtom "else", conseq, LieAtom "."]
+    return $ LieList [LieNil, LieAtom "else:", conseq, LieAtom "."]
 
 parseClause :: Parser LieVal
 parseClause = try parseWildcardClause
            <|> do
                 predicate <- parseExpr
                 spaces
-                string "then"
+                string "then:"
                 spaces
                 conseq <- parseExpr
-                return $ LieList [predicate, LieAtom "then", conseq, LieAtom "."]
+                return $ LieList [predicate, LieAtom "then:", conseq, LieAtom "."]
 
 parseCond :: Parser LieVal
 parseCond = do
@@ -228,7 +235,7 @@ parseLet = do
     string "let"
     spaces
     bindings <- endBy (try parseLetClause) (do {char '.'; many space})
-    string "in"
+    string "in:"
     spaces
     expr <- parseFunctionBody
     return $ convertToLambda bindings expr

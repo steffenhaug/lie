@@ -1,8 +1,10 @@
 (fn id x. x)
 
-(fn curry fun arg1. lambda arg. apply fun arg1 arg)
+(fn curry fun arg1. λ arg. apply fun arg1 arg)
 
-(fn not a. if a then False else True)
+(fn compose f g. λ x. (f (g x)))
+
+(fn not a. if a then: False else: True)
 
 (fn incr n. + n 1)
 
@@ -16,9 +18,9 @@
 
 (def negative? (curry < 0))
 
-(fn max x y. if (< x y) then y else x)
+(fn max x y. if (< x y) then: y else: x)
 
-(fn min x y. if (< x y) then x else y)
+(fn min x y. if (< x y) then: x else: y)
 
 (fn odd? x. one? (mod x 2))
 
@@ -39,38 +41,44 @@
 (fn foldl fun acc vec.
   let v  <- (head vec).
       vs <- (tail vec).
-  in if (empty? vec) then acc
-     else (foldl fun (fun acc v) vs))
+  in: if (empty? vec) then: acc
+      else: (foldl fun (fun acc v) vs))
 
 (fn foldr fun end vec.
   let v  <- (head vec).
       vs <- (tail vec).
-  in if (empty? vec) then end
-     else (fun v (foldr fun end vs)))	
+  in: if (empty? vec) then: end
+      else: (fun v (foldr fun end vs)))	
 
 (fn unfold fun init pred.
-    if (pred init) then [init]
-    else (cons init (unfold fun (fun init) pred)))
+    if (pred init) then: [init]
+    else: (cons init (unfold fun (fun init) pred)))
 
 (fn reduce fun vec.
   let v  <- (head vec).
       vs <- (tail vec).
-  in foldl fun v vs)
+  in: foldl fun v vs)
 
 (fn map fun vec.
   let Γ <- (λ x xs. cons (fun x) xs).
-  in foldr Γ [] vec)
+  in: foldr Γ [] vec)
 
 (fn mapfilter fun pred vec.
   let v  <- (head vec).
       vs <- (tail vec).
       Γ  <- (λ x xs. let x' <- (fun x).
-	       	     in if (pred x') then (cons x' xs) else xs).
-  in foldr Γ [] vec)
+	       	     in: if (pred x') then: (cons x' xs) else: xs).
+  in: foldr Γ [] vec)
+
+(fn mapreduce mfun rfun vec.
+  let v  <- (mfun (head vec)).
+      vs <- (tail vec).
+      Γ  <- (λ x y. rfun x (mfun y)).
+  in: foldl Γ v vs)
 
 (fn filter pred vec.
-    let Γ <- (λ x xs. if (pred x) then (cons x xs) else xs).
-    in foldr Γ [] vec)
+    let Γ <- (λ x xs. if (pred x) then: (cons x xs) else: xs).
+    in: foldr Γ [] vec)
 
 (def all (curry reduce and))
 

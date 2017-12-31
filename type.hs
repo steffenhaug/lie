@@ -15,7 +15,7 @@ data LieVal = LieNil
             | LieList [LieVal]
             | LieVec (Vec.Vector LieVal)
             | LieInt Integer
-            | LieReal Double
+            | LieReal Double
             | LieComplex (Complex Double)
             | LieStr String
             | LieBool Bool
@@ -23,6 +23,7 @@ data LieVal = LieNil
             | LieFunction {params :: [String], body :: LieVal, closure :: Env}
             | LieIOPrimitive ([LieVal] -> IOThrowsException LieVal)
             | LiePort Handle
+            | LieComment
 
 -- Eq instance for primitives, everything else assumed unequal
 instance Eq LieVal where
@@ -37,6 +38,7 @@ instance Eq LieVal where
     _ == _                       = False
 
 instance Show LieVal where
+    show LieComment          = "<comment>"
     show (LieAtom a)         = a
     show (LieInt x)          = show x
     show (LieReal x)         = show x

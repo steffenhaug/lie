@@ -79,7 +79,7 @@ eval env (LieList [LieAtom "include", LieStr filename]) =
     load filename >>= liftM last . mapM (eval env)
 
 -- if-then-else
-eval env (LieList [LieAtom "if", pred, LieAtom "then", conseq, LieAtom "else", alt]) = 
+eval env (LieList [LieAtom "if", pred, LieAtom "then:", conseq, LieAtom "else:", alt]) = 
     do result <- eval env pred
        case result of
             LieBool True  -> eval env conseq
@@ -87,7 +87,7 @@ eval env (LieList [LieAtom "if", pred, LieAtom "then", conseq, LieAtom "else", a
             a -> throwError $ TypeException "boolean" a
 
 -- unless-then-else
-eval env (LieList [LieAtom "unless", pred, LieAtom "then", conseq, LieAtom "else", alt]) = 
+eval env (LieList [LieAtom "unless", pred, LieAtom "then:", conseq, LieAtom "else:", alt]) = 
     do result <- eval env pred
        case result of
             LieBool False -> eval env conseq
@@ -97,7 +97,7 @@ eval env (LieList [LieAtom "unless", pred, LieAtom "then", conseq, LieAtom "else
 -- cond
 eval env (LieList [LieAtom "cond", LieList clauses]) = evalClauses clauses
         where evalClauses [] = return LieNil
-              evalClauses (LieList [_, LieAtom "else", conseq, _]:cs) = eval env conseq
+              evalClauses (LieList [_, LieAtom "else:", conseq, _]:cs) = eval env conseq
               evalClauses (LieList [pred, _, conseq, _]:cs) =
                 do result <- eval env pred
                    case result of
@@ -110,7 +110,7 @@ eval env (LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]) =
     do result <- eval env expr
        evalClauses result clauses
        where evalClauses _ [] = return LieNil
-             evalClauses _ (LieList [_, LieAtom "else", conseq, _]:cs) = eval env conseq
+             evalClauses _ (LieList [_, LieAtom "else:", conseq, _]:cs) = eval env conseq
              evalClauses r (LieList [pred, _, conseq, _]:cs) =
                 do r' <- eval env pred
                    case r' == r of
@@ -171,6 +171,6 @@ main :: IO ()
 main = do args <- getArgs
           if null args
             then do 
-              putStrLn "Lie Interpreter version 0.1. Type \"exit\", or press Ctr-D to exit."
+              putStrLn "Lie Interpreter version 0.1. Type \":q\", or press Ctr-D to exit."
               runRepl
             else runOne $ args
