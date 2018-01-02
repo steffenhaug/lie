@@ -78,7 +78,8 @@ lieLast [] = throwError $ ArityException 1 []
 lieLast (LieVec v:[]) = return $ Vec.last v
 lieLast argv@(_:_) = throwError $ ArityException 1 argv
 
-foldV' :: (LieVal -> LieVal -> ThrowsException LieVal) -> LieVal -> [LieVal] -> ThrowsException LieVal
+foldV' :: (LieVal -> LieVal -> ThrowsException LieVal) -> LieVal -> [LieVal]
+       -> ThrowsException LieVal
 foldV' fn a [] = throwError $ ArityException 1 []
 foldV' fn a [x] = fn a x
 foldV' fn a l@(x:xs) = foldV fn l

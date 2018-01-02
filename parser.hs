@@ -35,15 +35,6 @@ readOrThrow parser input = case parse parser "Parsing expression " input of
     Left err  -> throwError $ ParserException err
     Right val -> return val
 
-readContents :: [LieVal] -> IOThrowsException LieVal
-readContents [LieStr filename] = liftM LieStr $ liftIO $ readFile filename
-
-load :: String -> IOThrowsException [LieVal]
-load filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
-
-readAll :: [LieVal] -> IOThrowsException LieVal
-readAll [LieStr filename] = liftM LieList $ load filename
-
 parseListLike :: Parser LieVal
 parseListLike = do
     l <-  try parseCond
@@ -151,20 +142,20 @@ parseVec = do
 
 parseWildcardClause :: Parser LieVal
 parseWildcardClause =  do
-    string "else:"
+    string "else"
     spaces
     conseq <- parseExpr
-    return $ LieList [LieNil, LieAtom "else:", conseq, LieAtom "."]
+    return $ LieList [LieNil, LieAtom "else", conseq, LieAtom "."]
 
 parseClause :: Parser LieVal
 parseClause = try parseWildcardClause
            <|> do
                 predicate <- parseExpr
                 spaces
-                string "then:"
+                string "then"
                 spaces
                 conseq <- parseExpr
-                return $ LieList [predicate, LieAtom "then:", conseq, LieAtom "."]
+                return $ LieList [predicate, LieAtom "then", conseq, LieAtom "."]
 
 parseCond :: Parser LieVal
 parseCond = do
@@ -235,7 +226,7 @@ parseLet = do
     string "let"
     spaces
     bindings <- endBy (try parseLetClause) (do {char '.'; many space})
-    string "in:"
+    string "in"
     spaces
     expr <- parseFunctionBody
     return $ convertToLambda bindings expr

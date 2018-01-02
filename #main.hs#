@@ -188,7 +188,6 @@ runOne args =
        liftM show $ eval env (LieList [LieAtom "include", LieStr (args !! 0)]) 
      hPutStrLn stderr evalSuccess
 
-
 runRepl :: IO ()
 runRepl = do
   env <- primitiveBindings

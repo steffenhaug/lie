@@ -62,7 +62,7 @@ data LieException = ArityException Integer [LieVal]
                   | BadFormException String LieVal
                   | NotFunctionException String String
                   | UnboundVariableException String String
-                  | AlreadyDefinedException String
+                  | AlreadyDefinedException String
                   | Exception String
 
 type IOThrowsException = ExceptT LieException IO
