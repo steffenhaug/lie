@@ -28,6 +28,8 @@
 
 (fn square x. * x x)
 
+(fn flip f. λ x y. f y x)
+
 (fn cons x xs. conj [x] xs)
 
 (fn append x xs. conj xs [x])
@@ -35,8 +37,6 @@
 (fn empty? vec. = [] vec)
 
 (fn singleton? vec. one? (length vec))
-
-(fn flip f. λ x y. f y x)
 
 (fn foldl fun acc vec.
   let v  <- (head vec).
@@ -90,12 +90,20 @@
 
 (def sum (curry reduce +))
 
+(fn slice start stop vec.
+  let length <- (- stop start).
+  in get start length vec)
+
+(fn take n vec. get 0 n vec) 
+
+(fn drop n vec. slice n (length vec) vec)
+
+(fn last vec. get (- (length vec) 1) vec)
+
 (def Σ sum)
 
 (def product (curry reduce *))
 
 (def Π product)
-
-(fn naturals n. unfold incr 1 (curry = n))
 
 (fn reverse vec. foldr append [] vec)

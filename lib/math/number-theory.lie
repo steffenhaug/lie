@@ -1,0 +1,5 @@
+(fn naturals n. unfold incr 1 (curry = n))
+
+(fn fac n. product (naturals n))
+
+
