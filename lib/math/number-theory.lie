@@ -1,3 +1,17 @@
-(function naturals n. unfold incr 1 (curry = n))
+(function positive-integers n. unfold incr 1 (curry = n))
 
-(function fac n. product (naturals n))
+(function naturals n. unfold incr 0 (curry = (- n 1)))
+
+(function fac n. product (positive-integers n))
+
+(function sgn n.
+  cond (positive? n) then  1.
+       (negative? n) then -1.
+       		     else  0)
+
+(function gcd m n.
+  cond (> m n) then (gcd (- m n) n).
+       (< m n) then (gcd m (- n m)).
+       	       else m)
+
+(function abs x. * x (sgn x))
