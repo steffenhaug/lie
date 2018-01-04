@@ -1,109 +1,114 @@
-(fn id x. x)
+(function id x. x)
 
-(fn curry fun arg1. λ arg. apply fun arg1 arg)
+(function curry fun arg1. λ arg. apply fun arg1 arg)
 
-(fn compose f g. λ x. (f (g x)))
+(function compose f g. λ x. (f (g x)))
 
-(fn not a. if a then False else True)
+(function not a. if a then False else True)
 
-(fn incr n. + n 1)
+(function incr n. + n 1)
 
-(fn decr n. - n 1)
+(function decr n. - n 1)
 
-(def zero? (curry = 0))
+(define zero? (curry = 0))
 
-(def one? (curry = 1))
+(define one? (curry = 1))
 
-(def positive? (curry > 0))
+(define positive? (curry > 0))
 
-(def negative? (curry < 0))
+(define negative? (curry < 0))
 
-(fn max x y. if (< x y) then y else x)
+(function max x y. if (< x y) then y else x)
 
-(fn min x y. if (< x y) then x else y)
+(function min x y. if (< x y) then x else y)
 
-(fn odd? x. one? (mod x 2))
+(function odd? x. one? (mod x 2))
 
-(fn even? x. zero? (mod x 2))
+(function even? x. zero? (mod x 2))
 
-(fn square x. * x x)
+(function square x. * x x)
 
-(fn flip f. λ x y. f y x)
+(function flip f. λ x y. f y x)
 
-(fn cons x xs. conj [x] xs)
+(function cons x xs. conj [x] xs)
 
-(fn append x xs. conj xs [x])
+(function append x xs. conj xs [x])
 
-(fn empty? vec. = [] vec)
+(function empty? vec. = [] vec)
 
-(fn singleton? vec. one? (length vec))
+(function singleton? vec. one? (length vec))
 
-(fn foldl fun acc vec.
+(function foldl fun acc vec.
   let v  <- (head vec).
       vs <- (tail vec).
   in if (empty? vec) then acc
      else (foldl fun (fun acc v) vs))
 
-(fn foldr fun end vec.
+(function foldr fun end vec.
   let v  <- (head vec).
       vs <- (tail vec).
   in if (empty? vec) then end
      else (fun v (foldr fun end vs)))	
 
-(fn unfold fun init pred.
-    if (pred init) then [init]
-    else (cons init (unfold fun (fun init) pred)))
+(function unfold fun init pred.
+  if (pred init) then [init]
+  else (cons init (unfold fun (fun init) pred)))
 
-(fn reduce fun vec.
+(function repeat a n.
+  if (zero? n) then []
+  else (cons a (repeat a (- n 1))))
+
+(function reduce fun vec.
   let v  <- (head vec).
       vs <- (tail vec).
   in foldl fun v vs)
 
-(fn map fun vec.
+(function map fun vec.
   let Γ <- (λ x xs. cons (fun x) xs).
   in foldr Γ [] vec)
 
-(fn mapfilter fun pred vec.
+(function mapfilter fun pred vec.
   let v  <- (head vec).
       vs <- (tail vec).
       Γ  <- (λ x xs. let x' <- (fun x).
-	       	     in if (pred x') then (cons x' xs) else xs).
+	       	     in if (pred x') then (cons x' xs)
+		     	else xs).
   in foldr Γ [] vec)
 
-(fn mapreduce mfun rfun vec.
+(function mapreduce mfun rfun vec.
   let v  <- (mfun (head vec)).
       vs <- (tail vec).
       Γ  <- (λ x y. rfun x (mfun y)).
   in foldl Γ v vs)
 
-(fn filter pred vec.
-    let Γ <- (λ x xs. if (pred x) then (cons x xs) else xs).
-    in foldr Γ [] vec)
+(function filter pred vec.
+  let Γ <- (λ x xs. if (pred x) then (cons x xs) else xs).
+  in foldr Γ [] vec)
 
-(def all (curry reduce and))
+(define all (curry reduce and))
 
-(def any (curry reduce or))
+(define any (curry reduce or))
 
-(def sup (curry reduce max))
+(define sup (curry reduce max))
 
-(def inf (curry reduce min))
+(define inf (curry reduce min))
 
-(def sum (curry reduce +))
+(define sum (curry reduce +))
 
-(fn slice start stop vec.
+(function slice start stop vec.
   let length <- (- stop start).
   in get start length vec)
 
-(fn take n vec. get 0 n vec) 
+(function take n vec. get 0 n vec) 
 
-(fn drop n vec. slice n (length vec) vec)
+(function drop n vec. slice n (length vec) vec)
 
-(fn last vec. get (- (length vec) 1) vec)
+(function last vec. get (- (length vec) 1) vec)
 
-(def Σ sum)
+(define Σ sum)
 
-(def product (curry reduce *))
+(define product (curry reduce *))
 
-(def Π product)
+(define Π product)
 
-(fn reverse vec. foldr append [] vec)
+(function reverse vec. foldr append [] vec)

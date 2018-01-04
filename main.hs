@@ -63,9 +63,14 @@ load :: String -> IOThrowsException [LieVal]
 load filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
 
 lWrite :: [LieVal] -> IOThrowsException LieVal
-lWrite [LieStr s]               = lWrite [LieStr s, LiePort stdout]
-lWrite [LieStr s, LiePort port] = liftIO $ hPrint port s >> (return $ LieBool True)
-lWrite _ = return $ LieBool False
+lWrite [x]                      = lWrite [x, LiePort stdout]
+lWrite [x, LiePort port]        = liftIO $
+  hPutStr port (show x) >> (return $ LieBool True)
+
+lWriteLn :: [LieVal] -> IOThrowsException LieVal
+lWriteLn [x]                      = lWriteLn [x, LiePort stdout]
+lWriteLn [x, LiePort port]        = liftIO $
+  hPutStrLn port (show x) >> (return $ LieBool True)
 
 lReadLn :: [LieVal] -> IOThrowsException LieVal
 lReadLn []             = lReadLn [LiePort stdin]
@@ -80,8 +85,9 @@ ioPrimitives = [("apply",             applyProc),
                 ("open-output-file",  makePort WriteMode),
                 ("close-input-port",  closePort),
                 ("close-output-port", closePort),
-                ("readln",            lReadLn),
-                ("writeln",           lWrite),
+                ("read",              lReadLn),
+                ("print",             lWrite),
+                ("println",           lWriteLn),
                 ("read-contents",     readContents),
                 ("read-all",          readAll)]
 
@@ -101,13 +107,17 @@ eval env val@(LieReal _)    = return val
 eval env val@(LieComplex _) = return val
 eval env val@(LieBool _)    = return val
 eval env val@(LieNil)       = return val
+-- include
+eval env (LieList [LieAtom "include", LieStr filename]) = 
+    load filename >>= liftM last . mapM (eval env)
+-- use
+eval env (LieList [LieAtom "use", LieAtom libname]) =
+  do path <- liftIO $  relativeLibraryPath libname
+     load path >>= liftM last . mapM (eval env)
 -- variable lookup
 eval env (LieAtom symbol) = getVar env symbol
 -- vector
 eval env (LieVec v) = mapM (eval env) v >>= return . LieVec
--- include
-eval env (LieList [LieAtom "include", LieStr filename]) = 
-    load filename >>= liftM last . mapM (eval env)
 -- if-then-else
 eval env (LieList [LieAtom "if", pred, LieAtom "then", conseq, LieAtom "else", alt]) = 
     do result <- eval env pred
@@ -140,7 +150,7 @@ eval env (LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]) =
 eval env (LieList [LieAtom "set!", LieAtom var, form]) =
   eval env form >>= setVar env var
 -- symbol definition
-eval env (LieList [LieAtom "def", LieAtom var, form]) = eval env form >>= defineVar env var
+eval env (LieList [LieAtom "define", LieAtom var, form]) = eval env form >>= defineVar env var
 -- lambda
 eval env (LieList [LieAtom "lambda", LieList params, body]) = makeFunc env params body
 -- function application
@@ -163,10 +173,6 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
 
--- include
--- eval env (LieList [LieAtom "include", LieStr filename]) = 
---   load filename >>= liftM last . mapM (eval env)
-
 repl :: Env -> IO ()
 repl env = do
   maybeLine <- readline "Lie >> "
@@ -177,23 +183,21 @@ repl env = do
                     evalAndPrint env line
                     repl env
 
--- | Lie scripts are evaluated by evaluating a fake include expression
 runOne :: [String] -> IO ()
 runOne args =
   do argvector   <- return [("argv", LieVec $ Vec.fromList (map LieStr args))]
      env         <- primitiveBindings >>= flip bindVars argvector
-     path <- relativeLibraryPath "stlib"
-     runIOThrows $ liftM show $ load path >>= liftM last . mapM (eval env)
-     evalSuccess <- runIOThrows $
+     _ <- runIOThrows $
+       liftM show $ eval env (LieList [LieAtom "use", LieAtom "stlib"]) 
+     _ <- runIOThrows $
        liftM show $ eval env (LieList [LieAtom "include", LieStr (args !! 0)]) 
-     hPutStrLn stderr evalSuccess
-
+     return ()
 
 runRepl :: IO ()
 runRepl = do
   env <- primitiveBindings
-  path <- relativeLibraryPath "stlib"
-  runIOThrows $ liftM show $ load path >>= liftM last . mapM (eval env)
+  _ <- runIOThrows $
+    liftM show $ eval env (LieList [LieAtom "use", LieAtom "stlib"]) 
   repl env
 
 main :: IO ()

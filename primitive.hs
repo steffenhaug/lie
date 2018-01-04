@@ -29,6 +29,8 @@ primitives = [("+",         foldV  lieAdd),
               ("conj",      lieConj),
               ("head",      lieHead),
               ("tail",      lieTail),
+              ("init",      lieInit),
+              ("get",       lieGet),
               ("length",    lieLen),
               ("int?",      unaryOp intp),
               ("str?",      unaryOp strp),
@@ -42,7 +44,8 @@ unaryOp fn []  = throwError $ ArityException 1 []
 unaryOp fn [x] = fn x
 unaryOp fn v   = throwError $ ArityException 1 v
 
-binaryOp :: (LieVal -> LieVal -> ThrowsException LieVal) -> [LieVal] -> ThrowsException LieVal
+binaryOp :: (LieVal -> LieVal -> ThrowsException LieVal) -> [LieVal]
+         -> ThrowsException LieVal
 binaryOp fn []     = throwError $ ArityException 2 []
 binaryOp fn [x]    = throwError $ ArityException 2 [x]
 binaryOp fn [x, y] = fn x y
@@ -59,6 +62,14 @@ lieConj v = return . LieVec $ (foldl1 (Vec.++) . map extractVector) v
             where 
                 extractVector (LieVec v) = v
 
+-- do error handling when index oob. Vec.!? -> Maybe LieVal
+lieGet :: [LieVal] -> ThrowsException LieVal
+lieGet [] = throwError $ ArityException 1 []
+lieGet (LieInt i : LieVec v : []) = return $ v Vec.! (fromInteger i)
+lieGet (LieInt i : LieInt j : LieVec v : []) = return $
+  LieVec $ Vec.slice (fromInteger i) (fromInteger j) v
+lieGet argv = throwError $ ArityException 3 argv
+
 lieHead :: [LieVal] -> ThrowsException LieVal
 lieHead [] = throwError $ ArityException 1 []
 lieHead (LieVec v:[]) = return $ case Vec.length v of
@@ -72,6 +83,13 @@ lieTail (LieVec v:[]) = return $ case Vec.length v of
                                     0 -> LieNil
                                     _ -> LieVec (Vec.tail v)
 lieTail argv@(_:_) = throwError $ ArityException 1 argv
+
+lieInit :: [LieVal] -> ThrowsException LieVal
+lieInit [] = throwError $ ArityException 1 []
+lieInit (LieVec v:[]) = return $ case Vec.length v of
+                                    0 -> LieNil
+                                    _ -> LieVec (Vec.init v)
+lieInit argv@(_:_) = throwError $ ArityException 1 argv
 
 lieLast :: [LieVal] -> ThrowsException LieVal
 lieLast [] = throwError $ ArityException 1 []

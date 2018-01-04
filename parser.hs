@@ -202,7 +202,7 @@ parseLambda = do
 
 parseFunction :: Parser LieVal
 parseFunction = do
-    string "fn"
+    string "function"
     spaces
     symbol <- parseAtom
     spaces
@@ -210,7 +210,7 @@ parseFunction = do
     char '.'
     spaces
     expr <- parseFunctionBody
-    return $ LieList [LieAtom "def", symbol, LieList [LieAtom "lambda", LieList argv, expr]]
+    return $ LieList [LieAtom "define", symbol, LieList [LieAtom "lambda", LieList argv, expr]]
 
 parseLetClause :: Parser (LieVal, LieVal)
 parseLetClause = do

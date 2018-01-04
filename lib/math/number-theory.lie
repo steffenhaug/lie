@@ -1,5 +1,3 @@
-(fn naturals n. unfold incr 1 (curry = n))
+(function naturals n. unfold incr 1 (curry = n))
 
-(fn fac n. product (naturals n))
-
-
+(function fac n. product (naturals n))

@@ -126,23 +126,31 @@ implement (special forms, expressive syntax, list comprehensions)
                   else (do ...))
 ```
 
-### Let notation
+### Let notation, do
 ```
 (let a <- 5.
      b <- 7.
  in (+ a b))
 
- ;; convert to ((lambda a b. + x y) 5 7)
+-- convert to ((lambda a b. + x y) 5 7)
 
 (fn foldl fun acc vec.
     let x  <- (head vec).
         xs <- (tail vec).
     in foldl fun (fun acc x) xs)
+
+-- do
+(do (println "foo")
+    (println "bar")
+    x)
+
+-- threading
+(->> x. square -> halve -> (λ x. + 3 x) -> fac)
 ```
 
 ### Currying and parial application
 ```
-(f x y z) -> (((f x) y) z) = 
+(f x y z) -> (((f x) y) z)
 ```
 
 ### Example functions
@@ -164,4 +172,14 @@ implement (special forms, expressive syntax, list comprehensions)
     case (mod n 2) of
         0 then (div n 2).
           else (+ 1 (* 3 n)))
+```
+
+### For-like construct
+```
+-- Should build cartesian product of vectors
+(for i <- vector1.
+     j <- vector2.
+ yield (f i j))
+
+[f i j | i <- vector1. j <- vector2]
 ```

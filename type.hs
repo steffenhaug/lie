@@ -44,7 +44,7 @@ instance Show LieVal where
     show (LieReal x)         = show x
     show (LieComplex (0:+y)) = (show y) ++ "i"
     show (LieComplex (x:+y)) = (show x) ++ "+" ++ (show y) ++ "i"
-    show (LieStr s)          = "\"" ++ s ++ "\""
+    show (LieStr s)          = s
     show (LieBool b)         = show b
     show LieNil              = "Nil"
     show (LieList l)         = "(" ++ (unwords . map show) l ++ ")"
