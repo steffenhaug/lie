@@ -1,7 +1,48 @@
 # things that should be done:
 
+### language features
+- comments
+- variaduc functions -> currying and composition, pipes
+- class or struct
+- do
+- list-comprehension or for/yield ala scala
+
+### nice-to-haves
+- documentation baked into the interpreter, ala clojure
+- make vector functions operate on lists *
+
+* this can (hopefully) be done at interpreter-level as
+```
+f (LieStr s) = LieStr $ toList (f $ LieVec $ fromList s),
+```
+in other words converting converting it to and from a vector.
+this is probably O(n), but the only other option is to change
+the implementation of strings to vectors of chars, and this is
+hard (maybe impossible), sinca a LieChar would be indistinguishable
+from any other type, and ghc can not enforce LieVec LieChar, only
+LieVec LieVal, which could be anything.
+
+### functions
+- zip (zip is actually kind of just transopsing when we have no tuple type)
+- uncons
+- intersperse
+- transpose
+- permutations
+- pairs
+
+### interpreter-level
+- more, and better, error handling
+
+### misc
+- documentation
+  - write a latex-document
+  - make a website (lie.haug.rs)
+
+-------------------------------------------------------------------------
+4. Jan
+
 ### Whenever
-- functions on collections
+- functions on collections (all these are done, but we need more)
     - fold (perhaps foldl and foldr)
     - fold1
     - map
@@ -22,10 +63,13 @@
     - contains (this cay be dumb, O(n))
 
 - functions on functions / features of functions
-    - composition
+    - (partially working *) composition
     - threading a-la clojure
-    - automatic currying
+    - (partially working *) currying
     - partial application
+
+* curry and compose are implemented for arity-1 functions, but without
+*proper* variadic functtions better implementations are hard.
 
 ### Data structures
 - maps (radix trees or hash maps)
@@ -33,8 +77,10 @@
 - queue / stack
     - other types of queue structures (min/max binary heaps)
 
+Implementing mutable data structures is probably (maybe) not desirable.
+
 ### Short term:
-- [22. Dec] *GIT GIT GIT GIT* i shalt break the interpreter irreversibly ... nevermore
+- [22. Dec] git
 - [22. Dec] Numeric functions *N E E D* to throw errors when the args are of wrong type
 - [21. Dec] error handling
 - [on hold] refactoring. in particular:
@@ -45,17 +91,11 @@
 - [] special forms
     - [23. Dec] if/unless
     - [23. Dec] case-on/cond
-    - let / do
-    - threading (clojure ->>) or equivalent
+    - [done] let / do
+    - [waiting for compose] threading (clojure ->>) or equivalent
 
 ### Nice to haves:
 - [23. dec] port REPL to readline
-- parser for delimited sequences ('[' a b c ... ']' etc.)
-- left-factor parsers for common subsequences
-
-When this is done right the interpreter should be fairly usable, and
-splitting/refactoring the parser should make new patterns easier to
-implement (special forms, expressive syntax, list comprehensions)
 
 ### Long term:
 - [24. Dec] lexical scopes, environments
@@ -75,12 +115,29 @@ implement (special forms, expressive syntax, list comprehensions)
 - Statistics
 - Graph theory
 - Number theory
+- networking
+- databases
+- foreign function interface *
+  - interface to rust would be fun
+  - interface to haskell would be useful, and almost as fun
+  - interface to C/C++ would be really useful for libs
+  - Fortran if we really want to get dirty with linear algebra
+
+* extensions to other languages will let us implement libraries as thin
+wrappers of other libraries. some useful ones would include:
+- Diesel (Rust), for databases
+- Rocket (Rust), webservers et. al.
+- SQLite (C)
+- LAPACK (Fortran), linear algebra
+- ALTAS (C), linear algebra
 
 ### Maybe never:
 - Implement arrays as vector tries a-la clojure
-- Monads (*at least* Maybe)
+- Monads or something monad-ish (*at least* Maybe)
     - then we need >>= in some form to fight verbosity
 - easy basic regex syntax (perl compatible, with /expr/-notation)
+
+# Notes and ideas
 
 ### Lambda, function notation options
 ```
@@ -97,6 +154,13 @@ implement (special forms, expressive syntax, list comprehensions)
 (λ x. * x x)
 
 (fn func (x y z) do ...)
+
+-- multiple-arity (ala clojure)
+(function foobar
+  (λ x. "arity one")
+  (λ x y. "arity two")
+  (λ x y z. "arity three"))
+
 ```
 
 ### Switch, if/unmless notation options

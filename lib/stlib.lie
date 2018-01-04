@@ -1,62 +1,78 @@
 (function id x. x)
 
-(function curry fun arg1. λ arg. apply fun arg1 arg)
+(function curry fun arg1.
+  λ arg. apply fun arg1 arg)
 
-(function compose f g. λ x. (f (g x)))
+(function compose f g.
+  λ x. (f (g x)))
 
-(function not a. if a then False else True)
+(function not a.
+  if a then False else True)
 
 (function incr n. + n 1)
 
 (function decr n. - n 1)
 
+(function square x. * x x)
+
 (define zero? (curry = 0))
 
 (define one? (curry = 1))
 
-(define positive? (curry > 0))
+(define positive? (curry < 0))
 
-(define negative? (curry < 0))
+(define negative? (curry > 0))
 
-(function max x y. if (< x y) then y else x)
+(function max x y.
+  if (< x y) then y else x)
 
-(function min x y. if (< x y) then x else y)
+(function min x y.
+  if (< x y) then x else y)
 
-(function odd? x. one? (mod x 2))
+(function odd? x.
+  one? (mod x 2))
 
-(function even? x. zero? (mod x 2))
+(function even? x.
+  zero? (mod x 2))
 
-(function square x. * x x)
+(function flip f.
+  λ x y. f y x)
 
-(function flip f. λ x y. f y x)
+(function cons x xs.
+  conj [x] xs)
 
-(function cons x xs. conj [x] xs)
+(function append x xs.
+  conj xs [x])
 
-(function append x xs. conj xs [x])
+(function empty? vec.
+  zero? (length vec))
 
-(function empty? vec. = [] vec)
-
-(function singleton? vec. one? (length vec))
+(function singleton? vec.
+  one? (length vec))
 
 (function foldl fun acc vec.
   let v  <- (head vec).
       vs <- (tail vec).
   in if (empty? vec) then acc
-     else (foldl fun (fun acc v) vs))
+     else
+       (foldl fun (fun acc v) vs))
 
 (function foldr fun end vec.
   let v  <- (head vec).
       vs <- (tail vec).
   in if (empty? vec) then end
-     else (fun v (foldr fun end vs)))	
+     else
+       (fun v (foldr fun end vs)))
 
 (function unfold fun init pred.
   if (pred init) then [init]
-  else (cons init (unfold fun (fun init) pred)))
+  else
+    (cons init (unfold fun (fun init) pred)))
 
 (function repeat a n.
   if (zero? n) then []
-  else (cons a (repeat a (- n 1))))
+  else
+    (cons a (repeat a (- n 1))))
 
 (function reduce fun vec.
   let v  <- (head vec).
@@ -68,11 +84,8 @@
   in foldr Γ [] vec)
 
 (function mapfilter fun pred vec.
-  let v  <- (head vec).
-      vs <- (tail vec).
-      Γ  <- (λ x xs. let x' <- (fun x).
-	       	     in if (pred x') then (cons x' xs)
-		     	else xs).
+  let Γ  <- (λ x xs. let x' <- (fun x). in
+      	       	       if (pred x') then (cons x' xs) else xs).
   in foldr Γ [] vec)
 
 (function mapreduce mfun rfun vec.
@@ -89,9 +102,9 @@
 
 (define any (curry reduce or))
 
-(define sup (curry reduce max))
+(define maximum (curry reduce max))
 
-(define inf (curry reduce min))
+(define minimum (curry reduce min))
 
 (define sum (curry reduce +))
 
@@ -99,11 +112,43 @@
   let length <- (- stop start).
   in get start length vec)
 
-(function take n vec. get 0 n vec) 
+(function take n vec.
+  get 0 n vec) 
 
-(function drop n vec. slice n (length vec) vec)
+(define fst head)
 
-(function last vec. get (- (length vec) 1) vec)
+(define snd (compose head tail))
+
+(function pairs vec.
+  case (length vec) of
+    0 then [].
+    1 then [].
+    2 then [vec].
+  else (let v0 <- (fst vec).
+      	    v1 <- (snd vec).
+	    vs <- (tail vec).
+	in cons [v0 v1] (pairs vs)))
+
+(function zip v w.
+  cond
+    (empty? v) then [].
+    (empty? w) then [].
+  else (let v0 <- (head v).
+	    vs <- (tail v).
+	    w0 <- (head w).
+	    ws <- (tail w).
+	in cons [v0 w0] (zip vs ws)))
+
+(function ouroboros vec.
+  append (head vec) (tail vec))
+
+(function drop n vec.
+  slice n (length vec) vec)
+
+(define max-index (compose decr length))
+
+(function last vec.
+  get (max-index vec) vec)
 
 (define Σ sum)
 
@@ -111,4 +156,5 @@
 
 (define Π product)
 
-(function reverse vec. foldr append [] vec)
+(function reverse vec.
+  foldr append [] vec)
