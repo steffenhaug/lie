@@ -17,6 +17,8 @@
 
 (define zero? (curry = 0))
 
+(define nonzero? (curry != 0))
+
 (define one? (curry = 1))
 
 (define positive? (curry < 0))

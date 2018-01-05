@@ -2,6 +2,7 @@
 
 ### language features
 - comments
+- assosciative structure (either a wrapper around Data.Map or a basic Radix Tree)
 - variaduc functions -> currying and composition, pipes
 - class or struct
 - do
@@ -12,6 +13,7 @@
 - documentation baked into the interpreter, ala clojure
 - make vector functions operate on lists *
 - make let expand to nested lanbdas, so *we* dont need to nest let-blocks
+- infix functions
 
 * this can (hopefully) be done at interpreter-level as
 ```
@@ -25,13 +27,13 @@ from any other type, and ghc can not enforce LieVec LieChar, only
 LieVec LieVal, which could be anything.
 
 ### functions
-- zip
-- unzip
-- uncons
-- intersperse
-- transpose
-- permutations
-- pairs
+- [x] zip
+- [ ] unzip
+- [x] uncons
+- [x] intersperse
+- [ ] transpose
+- [ ] permutations
+- [x] pairs
 
 ### interpreter-level
 - more, and better, error handling
@@ -255,4 +257,59 @@ wrappers of other libraries. some useful ones would include:
 ```
 (let [v vs] <- (uncons vec).)
 
+```
+
+### data structures
+- structs may be implemented as maps
+- although implemented as maps, they should probably be their own type (LieStruct)
+  - some builtins should only work on structs
+    - "deref" or something should take a struct and a symbol
+    - extend should only work on structs, althought this may not be a function
+```
+(struct Vec3 x y z)
+
+(function vec3-norm v.
+  let x <- (v.x).	-- familiar from python and java 
+      y <- (v->y).	-- familiar from C, although subtly different meanings
+      z <- (get x v).	-- lispy, but not very clear
+  in sqrt (+ (square x) (square y) (square z)))
+
+-- a good implementation of this probably would make good use
+-- of proper infix operators.
+-- Λ may notate anonymous structures
+
+(abstract struct Tree)
+(struct Node <- Tree. value children)
+(struct Leaf <- Tree. value)
+(struct NilNode <- Tree)
+
+
+-- "methods"/implementations ala Rust.
+-- this is not so nice, because we need to mutate the
+-- structure every time we define a new method (implement expands to set!).
+-- this is pretty much only useful for namespacing
+
+(implement Tree imapt f. {- traverse and compute (f Node) -})
+(define t (Tree ...))
+(t->imapt square) -- evaluates to the squares of the tree
+
+-- should expand to functions returning LieStructs
+(function Node value children.
+  struct-from-map #{:value    -> value.
+  		    :chuldren -> children.})
+```
+
+### new let semantics
+```
+(let a <- (f ...).
+     b <- (g ...).
+     c <- (h ...).
+ in do ...)
+
+-- convert to ((lambda a.
+               (lambda b.
+	       (lambda c. (h ...))
+	                  (g ...))
+			  (f ...))
+-- this is a pretty simple recursive definition
 ```
