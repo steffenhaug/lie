@@ -6,10 +6,12 @@
 - class or struct
 - do
 - list-comprehension or for/yield ala scala
+- symbols (:sym) ala ruby
 
 ### nice-to-haves
 - documentation baked into the interpreter, ala clojure
 - make vector functions operate on lists *
+- make let expand to nested lanbdas, so *we* dont need to nest let-blocks
 
 * this can (hopefully) be done at interpreter-level as
 ```
@@ -18,12 +20,13 @@ f (LieStr s) = LieStr $ toList (f $ LieVec $ fromList s),
 in other words converting converting it to and from a vector.
 this is probably O(n), but the only other option is to change
 the implementation of strings to vectors of chars, and this is
-hard (maybe impossible), sinca a LieChar would be indistinguishable
+hard (maybe impossible), since a LieChar would be indistinguishable
 from any other type, and ghc can not enforce LieVec LieChar, only
 LieVec LieVal, which could be anything.
 
 ### functions
-- zip (zip is actually kind of just transopsing when we have no tuple type)
+- zip
+- unzip
 - uncons
 - intersperse
 - transpose
@@ -246,4 +249,10 @@ wrappers of other libraries. some useful ones would include:
  yield (f i j))
 
 [f i j | i <- vector1. j <- vector2]
+```
+
+### uncons
+```
+(let [v vs] <- (uncons vec).)
+
 ```

@@ -23,6 +23,14 @@
 
 (define negative? (curry > 0))
 
+(define lt (λ x. curry > x))
+
+(define gt (λ x. curry < x))
+
+(define leq (λ x. curry >= x))
+
+(define geq (λ x. curry <= x))
+
 (function max x y.
   if (< x y) then y else x)
 
@@ -40,6 +48,9 @@
 
 (function cons x xs.
   conj [x] xs)
+
+(function uncons vec.
+  [(head vec) (tail vec)])
 
 (function append x xs.
   conj xs [x])
@@ -133,11 +144,32 @@
   cond
     (empty? v) then [].
     (empty? w) then [].
-  else (let v0 <- (head v).
-	    vs <- (tail v).
-	    w0 <- (head w).
-	    ws <- (tail w).
-	in cons [v0 w0] (zip vs ws)))
+  else
+    (let v0 <- (head v).
+	 vs <- (tail v).
+	 w0 <- (head w).
+	 ws <- (tail w).
+     in cons [v0 w0] (zip vs ws)))
+
+(function intersperse e vec.
+  cond
+    (singleton? vec) then vec.
+    (empty? vec)     then vec.
+  else
+    (let v  <- (head vec).
+         vs <- (tail vec).
+     in conj [v e] (intersperse e vs)))
+
+(function sort vec.
+  cond
+    (singleton? vec) then vec.
+    (empty? vec)     then vec.
+  else
+    (let v  <- (head vec).
+         vs <- (tail vec).
+     in let lower  <- (filter (lt v) vs).
+            higher <- (filter (geq v) vs).
+        in conj (sort lower) [v] (sort higher)))
 
 (function ouroboros vec.
   append (head vec) (tail vec))
