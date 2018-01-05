@@ -15,20 +15,19 @@ readExpr = readOrThrow parseExpr
 readExprList = readOrThrow (endBy parseExpr (spaces <|> eof <|> skipMany (char '\n')))
 
 parseExpr :: Parser LieVal
-parseExpr =  parseNumber
-         <|> parseAtom
-         <|> parseString
-         <|> do 
-                char '(' 
-                l <- parseListLike
-                char ')'
-                return l
-         <|> do 
-                char '['
-                l <- parseVec
-                char ']'
-                return l
-         <?> "Expression"
+parseExpr = do exp <-  parseNumber
+                   <|> parseAtom
+                   <|> parseString
+                   <|> do char '('
+                          l <- parseListLike
+                          char ')'
+                          return l
+                   <|> do char '['
+                          l <- parseVec
+                          char ']'
+                          return l
+                   <?> "Expression"
+               return exp
 
 readOrThrow :: Parser a -> String -> ThrowsException a
 readOrThrow parser input = case parse parser "Parsing expression " input of
@@ -52,12 +51,11 @@ symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
 spaces :: Parser ()
 spaces = skipMany1 space
 
-comment :: Parser LieVal
+comment :: Parser ()
 comment = do
   string "--"
-  skipMany anyChar
-  skipMany (char '\n') <|> eof
-  return LieComment
+  manyTill anyChar (newline <|> (eof >> return '\n'))
+  return ()
 
 parseString :: Parser LieVal
 parseString = do
