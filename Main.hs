@@ -173,12 +173,16 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
 
+help :: String
+help = "Press Ctr-D or type \":q\" to exit."
+
 repl :: Env -> IO ()
 repl env = do
   maybeLine <- readline "Lie >> "
   case maybeLine of 
-    Nothing   -> return () -- EOF / control-d
-    Just ":q" -> return ()
+    Nothing   -> putStrLn "\nEOF"    >> return () -- EOF / control-d
+    Just ":q" -> putStrLn "Goodbye!" >> return ()
+    Just ":?" -> putStrLn help       >> repl env
     Just line -> do addHistory line
                     evalAndPrint env line
                     repl env

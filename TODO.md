@@ -142,6 +142,7 @@ wrappers of other libraries. some useful ones would include:
     - then we need >>= in some form to fight verbosity
 - easy basic regex syntax (perl compatible, with /expr/-notation)
 
+-----------------------
 # Notes and ideas
 
 ### Lambda, function notation options
@@ -312,4 +313,23 @@ wrappers of other libraries. some useful ones would include:
 	                  (g ...))
 			  (f ...))
 -- this is a pretty simple recursive definition
+```
+
+### comments
+```
+-- haskell style
+{- haskell style
+   multiline comment -}
+
+; traditional
+
+#| scheme-y multiline |#
+
+;; another option
+
+// c-style
+
+/* c- style multiline */
+
+# python style
 ```

@@ -14,6 +14,21 @@ import Primitive
 readExpr = readOrThrow parseExpr
 readExprList = readOrThrow (endBy parseExpr (spaces <|> eof <|> skipMany (char '\n')))
 
+symbol :: Parser Char
+symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
+
+-- |Language definition for Lie
+lieDef :: LanguageDef ()
+lieDef 
+  = emptyDef    
+  { P.commentLine    = "--"
+  , P.nestedComments = True
+  , P.identStart     = letter <|> symbol
+  , P.identLetter    = letter <|> digit <|> symbol
+  , P.reservedNames  = []
+  , P.caseSensitive  = True
+} 
+  
 parseExpr :: Parser LieVal
 parseExpr = do exp <-  parseNumber
                    <|> parseAtom
@@ -26,11 +41,11 @@ parseExpr = do exp <-  parseNumber
                           l <- parseVec
                           char ']'
                           return l
-                   <?> "Expression"
+                   <?> "expression"
                return exp
 
 readOrThrow :: Parser a -> String -> ThrowsException a
-readOrThrow parser input = case parse parser "Parsing expression " input of
+readOrThrow parser input = case parse parser "lie lisp" input of
     Left err  -> throwError $ ParserException err
     Right val -> return val
 
@@ -45,17 +60,13 @@ parseListLike = do
       <?> "List-like"
     return l
 
-symbol :: Parser Char
-symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
-
 spaces :: Parser ()
 spaces = skipMany1 space
 
 comment :: Parser ()
-comment = do
-  string "--"
-  manyTill anyChar (newline <|> (eof >> return '\n'))
-  return ()
+comment = do string "--"
+             skipMany (noneOf "\r\n")
+         <?> "comment"
 
 parseString :: Parser LieVal
 parseString = do
