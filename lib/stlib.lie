@@ -25,13 +25,13 @@
 
 (define negative? (curry > 0))
 
-(define lt (λ x. curry > x))
+(define lt? (λ x. curry > x))
 
-(define gt (λ x. curry < x))
+(define gt? (λ x. curry < x))
 
-(define leq (λ x. curry >= x))
+(define leq? (λ x. curry >= x))
 
-(define geq (λ x. curry <= x))
+(define geq? (λ x. curry <= x))
 
 (function max x y.
   if (< x y) then y else x)
@@ -64,15 +64,13 @@
   one? (length vec))
 
 (function foldl fun acc vec.
-  let v  <- (head vec).
-      vs <- (tail vec).
+  let v vs <- (uncons vec).
   in if (empty? vec) then acc
      else
        (foldl fun (fun acc v) vs))
 
 (function foldr fun end vec.
-  let v  <- (head vec).
-      vs <- (tail vec).
+  let v vs <- (uncons vec).
   in if (empty? vec) then end
      else
        (fun v (foldr fun end vs)))
@@ -88,24 +86,12 @@
     (cons a (repeat a (- n 1))))
 
 (function reduce fun vec.
-  let v  <- (head vec).
-      vs <- (tail vec).
+  let v vs <- (uncons vec).
   in foldl fun v vs)
 
 (function map fun vec.
   let Γ <- (λ x xs. cons (fun x) xs).
   in foldr Γ [] vec)
-
-(function mapfilter fun pred vec.
-  let Γ  <- (λ x xs. let x' <- (fun x). in
-      	       	       if (pred x') then (cons x' xs) else xs).
-  in foldr Γ [] vec)
-
-(function mapreduce mfun rfun vec.
-  let v  <- (mfun (head vec)).
-      vs <- (tail vec).
-      Γ  <- (λ x y. rfun x (mfun y)).
-  in foldl Γ v vs)
 
 (function filter pred vec.
   let Γ <- (λ x xs. if (pred x) then (cons x xs) else xs).
@@ -147,19 +133,16 @@
     (empty? v) then [].
     (empty? w) then [].
   else
-    (let v0 <- (head v).
-	 vs <- (tail v).
-	 w0 <- (head w).
-	 ws <- (tail w).
-     in cons [v0 w0] (zip vs ws)))
+    (let x xs <- (uncons v).
+	 y ys <- (uncons w).
+     in cons [x y] (zip xs ys)))
 
 (function intersperse e vec.
   cond
     (singleton? vec) then vec.
     (empty? vec)     then vec.
   else
-    (let v  <- (head vec).
-         vs <- (tail vec).
+    (let v vs <- (uncons vec).
      in conj [v e] (intersperse e vs)))
 
 (function sort vec.
@@ -167,11 +150,10 @@
     (singleton? vec) then vec.
     (empty? vec)     then vec.
   else
-    (let v  <- (head vec).
-         vs <- (tail vec).
-     in let lower  <- (filter (lt v) vs).
-            higher <- (filter (geq v) vs).
-        in conj (sort lower) [v] (sort higher)))
+    (let v vs   <- (uncons vec). 
+     	 lower  <- (filter (lt? v) vs).
+	 higher <- (filter (geq? v) vs).
+     in conj (sort lower) [v] (sort higher)))
 
 (function ouroboros vec.
   append (head vec) (tail vec))

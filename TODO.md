@@ -321,6 +321,12 @@ wrappers of other libraries. some useful ones would include:
 {- haskell style
    multiline comment -}
 
+---
+is this nice?
+maybe it is not so nice
+---
+
+
 ; traditional
 
 #| scheme-y multiline |#

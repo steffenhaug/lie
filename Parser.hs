@@ -12,23 +12,11 @@ import Type
 import Primitive
 
 readExpr = readOrThrow parseExpr
-readExprList = readOrThrow (endBy parseExpr (spaces <|> eof <|> skipMany (char '\n')))
+readExprList = readOrThrow $ (optional spaces) >> (endBy parseExpr (spaces <|> eof <|> skipMany (char '\n')))
 
 symbol :: Parser Char
 symbol = oneOf "!$%+-&|*/:'<=>?@^_~"
 
--- |Language definition for Lie
-lieDef :: LanguageDef ()
-lieDef 
-  = emptyDef    
-  { P.commentLine    = "--"
-  , P.nestedComments = True
-  , P.identStart     = letter <|> symbol
-  , P.identLetter    = letter <|> digit <|> symbol
-  , P.reservedNames  = []
-  , P.caseSensitive  = True
-} 
-  
 parseExpr :: Parser LieVal
 parseExpr = do exp <-  parseNumber
                    <|> parseAtom
@@ -61,12 +49,17 @@ parseListLike = do
     return l
 
 spaces :: Parser ()
-spaces = skipMany1 space
+spaces = do
+  skipMany1 (space <|> (comment >> return ' '))
 
 comment :: Parser ()
-comment = do string "--"
-             skipMany (noneOf "\r\n")
-         <?> "comment"
+comment = (try multiline) <|> (try linecomment)
+  where linecomment = do string "--"
+                         manyTill anyChar newline
+                         return ()
+        multiline = do string "---"
+                       manyTill anyChar (string "---")
+                       return ()
 
 parseString :: Parser LieVal
 parseString = do
@@ -170,7 +163,7 @@ parseCond :: Parser LieVal
 parseCond = do
     string "cond"
     spaces
-    clauses <- sepBy parseClause (do {char '.'; many space})
+    clauses <- sepBy parseClause (do {char '.'; many spaces})
     return $ LieList [LieAtom "cond", LieList clauses]
 
 parseCase :: Parser LieVal
@@ -181,20 +174,21 @@ parseCase = do
     spaces
     string "of"
     spaces
-    clauses <- sepBy parseClause (do {char '.'; many space})
+    clauses <- sepBy parseClause (do {char '.'; many spaces})
     return $ LieList [LieAtom "case", expr, LieAtom "of", LieList clauses]
 
--- | parser for function bodies. not that this parser assumes it
--- | is parsing a list, so we could end up with singleton function
--- | bodies, like (x), which would not evaluate properly. this case
--- | is accounted for by "extractSingleton".
+-- |Parses function bodies
+-- |note that this parser assumes it is parsing a list,
+-- |so we could end up with singleton function bodies
+-- |like (x), which would not evaluate properly. this
+-- |case is accounted for by "extractSingleton".
 parseFunctionBody :: Parser LieVal
 parseFunctionBody = 
     do
         l <- parseListLike
         return $ extractSingleton l
     where
-        -- extract the value from a singleton list
+        -- extract (x) to x
         extractSingleton li@(LieList l) = case length l of
             1 -> head l
             _ -> li
@@ -223,24 +217,45 @@ parseFunction = do
 
 parseLetClause :: Parser (LieVal, LieVal)
 parseLetClause = do
-    key <- parseAtom
-    spaces
-    string "<-"
-    spaces
-    value <- parseExpr
-    return $ (key, value)
+  keys <- manyTill (do {a <- parseAtom; spaces; return a}) (string "<-") -- [LieVal]
+  spaces
+  value <- parseExpr
+  return (extractSingleton keys, value)
+  where
+    -- extract (x) to x
+    extractSingleton [e] = e
+    extractSingleton es  = LieList es
 
 parseLet :: Parser LieVal
 parseLet = do
     string "let"
     spaces
-    bindings <- endBy (try parseLetClause) (do {char '.'; many space})
+    bindings <- endBy (try parseLetClause) (do {char '.'; many spaces})
     string "in"
     spaces
     expr <- parseFunctionBody
-    return $ convertToLambda bindings expr
+    return $ convert bindings expr
     where
-        convertToLambda bindings' expr' =
-            let (keys, vals) = split bindings' 
-            in LieList (LieList [LieAtom "lambda", LieList keys, expr']:vals)
-            where split l = ([fst x | x <- l], [snd x | x <- l])
+      -- binding vectors
+      convert [(LieList keys, LieVec values)] ex =
+        LieList [LieAtom "apply",
+                 LieList [LieAtom "lambda", LieList keys, ex],
+                 LieVec values]
+      convert ((LieList keys, LieVec values):kvs) ex =
+        LieList [LieAtom "apply",
+                 LieList [LieAtom "lambda", LieList keys, convert kvs ex],
+                 LieVec values]
+      -- binding expressions that needs destructuring
+      convert [(LieList keys, LieList computation)] ex =
+        LieList [LieAtom "apply",
+                 LieList [LieAtom "lambda", LieList keys, ex],
+                 LieList computation]
+      convert ((LieList keys, LieList computation):kvs) ex =
+        LieList [LieAtom "apply",
+                 LieList [LieAtom "lambda", LieList keys, convert kvs ex],
+                 LieList computation]
+      -- binding key and values (the values may be lists or vecotrs)
+      convert [(key, value)] ex =
+        LieList [LieList [LieAtom "lambda", LieList [key], ex], value]
+      convert ((key, value):kvs) ex =
+        LieList [LieList [LieAtom "lambda", LieList [key], convert kvs ex], value]
